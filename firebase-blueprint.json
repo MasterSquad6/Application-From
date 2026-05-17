@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Application": {
+      "title": "Application",
+      "description": "Job application for ShopVerse",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "description": "Full name of the applicant" },
+        "dob": { "type": "string", "description": "Date of birth" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "whatsapp": { "type": "string", "description": "WhatsApp number" },
+        "city": { "type": "string", "description": "City of residence" },
+        "gender": { "type": "string", "description": "Gender" },
+        "position": { "type": "string", "description": "Position applied for" },
+        "experience": { "type": "string", "description": "Experience level" },
+        "workType": { "type": "string", "description": "Full-time or part-time" },
+        "hoursPerDay": { "type": "number", "description": "Available hours per day" },
+        "previousCompany": { "type": "string", "description": "Previous workplace" },
+        "bio": { "type": "string", "description": "A brief bio or introduction" },
+        "platforms": { "type": "array", "items": { "type": "string" }, "description": "Known e-commerce platforms" },
+        "skills": { "type": "array", "items": { "type": "string" }, "description": "Core skills" },
+        "tools": { "type": "array", "items": { "type": "string" }, "description": "Known tools" },
+        "englishRating": { "type": "number", "description": "Self-rated English proficiency" },
+        "salaryExpectation": { "type": "string", "description": "Expected monthly salary" },
+        "facebookLink": { "type": "string", "description": "Social media profile link" },
+        "imageUrls": { "type": "object", "description": "Map of document name to URL" },
+        "submittedAt": { "type": "string", "format": "date-time", "description": "When the application was submitted" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "shortlisted", "rejected"], "description": "Application status" }
+      },
+      "required": ["fullName", "email", "phone", "position", "experience", "agree"]
+    }
+  },
+  "firestore": {
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Collection of job applications"
+    }
+  }
+}
