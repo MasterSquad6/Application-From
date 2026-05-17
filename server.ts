@@ -32,24 +32,25 @@ async function startServer() {
 
       const authHeader = 'Basic ' + Buffer.from(privateKey + ':').toString('base64');
       
-      const form = new FormData();
-      // Use Base64 string for the file to avoid binary transmission issues in proxy
-      const base64File = file.buffer.toString('base64');
-      form.append('file', base64File);
-      
-      // Ensure fileName is safe and provided
       const cleanFileName = (fileName || file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
+      const form = new FormData();
+      // Passing the buffer directly with filename and type
+      form.append('file', file.buffer, { 
+        filename: cleanFileName,
+        contentType: file.mimetype 
+      });
+      
       form.append('fileName', cleanFileName);
       form.append('folder', folder);
       form.append('useUniqueFileName', 'true');
 
-      console.log(`[Proxy] Forwarding file to ImageKit via Base64: ${file.originalname} (${file.size} bytes)`);
+      console.log(`[Proxy] Forwarding file to ImageKit: ${file.originalname} (${file.size} bytes)`);
 
       const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          ...form.getHeaders(),
+          ...form.getHeaders(), // Extremely important for the boundary
         },
         body: form as any,
       });
