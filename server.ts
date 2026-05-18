@@ -34,11 +34,9 @@ async function startServer() {
       
       const cleanFileName = (fileName || file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
       const form = new FormData();
-      // Passing the buffer directly with filename and type
-      form.append('file', file.buffer, { 
-        filename: cleanFileName,
-        contentType: file.mimetype 
-      });
+      // Use Base64 string for the file to avoid binary transmission issues in proxy
+      const base64File = file.buffer.toString('base64');
+      form.append('file', base64File);
       
       form.append('fileName', cleanFileName);
       form.append('folder', folder);

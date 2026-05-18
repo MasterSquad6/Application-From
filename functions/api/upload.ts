@@ -18,9 +18,12 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
 
     const cleanFileName = (fileName || file.name).replace(/[^a-zA-Z0-9.-]/g, '_');
 
+    const arrayBuffer = await file.arrayBuffer();
+    const base64File = btoa(Array.from(new Uint8Array(arrayBuffer)).map(b => String.fromCharCode(b)).join(''));
+
     // ImageKit Upload API expects a specific multipart/form-data structure
     const ikFormData = new FormData();
-    ikFormData.append('file', file);
+    ikFormData.append('file', base64File);
     ikFormData.append('fileName', cleanFileName);
     ikFormData.append('folder', folder);
     ikFormData.append('useUniqueFileName', 'true');
