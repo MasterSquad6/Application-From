@@ -10,7 +10,11 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
     const folder = formData.get('folder') as string || '/shopverse_applications';
 
     // Prefer environment variable, fallback to hardcoded if not set
-    const privateKey = env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
+    const privateKey = env.IMAGEKIT_PRIVATE_KEY;
+    if (!privateKey) {
+      console.error('[Upload Function] Missing IMAGEKIT_PRIVATE_KEY');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration: Missing ImageKit Key' }), { status: 500 });
+    }
 
     if (!file) {
       console.error('[Upload Function] No file provided');

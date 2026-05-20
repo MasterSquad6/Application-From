@@ -36,34 +36,32 @@ export async function uploadToImageKit(file: File, onProgress?: (progress: numbe
     };
 
     xhr.onload = () => {
+      let result;
       try {
-        const result = JSON.parse(xhr.responseText);
-        
-        if (xhr.status >= 200 && xhr.status < 300) {
-          // If the proxy returns 200 but has success: false
-          if (result.success === false) {
-            reject(new Error(result.message || result.error || 'Upload failed'));
-          } else if (result.url) {
-            console.log(`[Upload] Successful: ${result.url}`);
-            resolve(result.url);
-          } else {
-            // Handle original ImageKit response format or proxy success
-            if (result.url) resolve(result.url);
-            else reject(new Error('Upload failed without URL'));
-          }
-        } else {
-          // If it's a real HTTP error from the proxy
-          const detailedError = result.message || result.error || xhr.statusText;
-          console.error(`[Upload] HTTP ${xhr.status}:`, xhr.responseText);
-          reject(new Error(detailedError));
-        }
+        result = JSON.parse(xhr.responseText);
       } catch (e) {
-        console.error('[Upload] Parse error:', xhr.responseText);
-        if (xhr.status === 403 && xhr.responseText.includes('<html')) {
-          reject(new Error('Access Forbidden: The upload was blocked by the security proxy. Try a smaller file.'));
+        console.error('[Upload] Parse error (Status ' + xhr.status + '):', xhr.responseText);
+        reject(new Error(`Server error (${xhr.status}): Could not parse response. Response was: ${xhr.responseText || 'Empty'}`));
+        return;
+      }
+      
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // If the proxy returns 200 but has success: false
+        if (result.success === false) {
+          reject(new Error(result.message || result.error || 'Upload failed'));
+        } else if (result.url) {
+          console.log(`[Upload] Successful: ${result.url}`);
+          resolve(result.url);
         } else {
-          reject(new Error(`Server error (${xhr.status})`));
+          // Handle original ImageKit response format or proxy success
+          if (result.url) resolve(result.url);
+          else reject(new Error('Upload failed: No URL returned by server.'));
         }
+      } else {
+        // If it's a real HTTP error from the proxy
+        const detailedError = result.message || result.error || xhr.statusText || 'Unknown error';
+        console.error(`[Upload] HTTP ${xhr.status}:`, xhr.responseText);
+        reject(new Error(detailedError));
       }
     };
 

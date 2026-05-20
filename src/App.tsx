@@ -341,31 +341,6 @@ const TrustSection = () => (
 
 // --- Form Components ---
 
-const Progress = ({ step }: { step: Step }) => (
-  <div className="flex items-center justify-between gap-1 sm:gap-2 mb-10 max-w-md mx-auto">
-    {[
-      { s: 1, l: 'ব্যক্তিগত' },
-      { s: 2, l: 'অভিজ্ঞতা' },
-      { s: 3, l: 'দক্ষতা' },
-      { s: 4, l: 'ডকুমেন্ট' }
-    ].map((item) => (
-      <div key={item.s} className="flex flex-col items-center gap-2 flex-1 last:flex-none">
-        <div className="flex items-center gap-1 sm:gap-2 w-full">
-          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-xs sm:text-sm transition-all duration-500 flex-shrink-0 ${
-            step >= item.s ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30' : 'bg-white border-2 border-slate-100 text-slate-300'
-          }`}>
-            {step > item.s ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : item.s}
-          </div>
-          {item.s < 4 && <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step > item.s ? 'bg-brand-blue' : 'bg-slate-100'}`} />}
-        </div>
-        <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${step >= item.s ? 'text-brand-blue' : 'text-slate-300'}`}>
-          {item.l}
-        </span>
-      </div>
-    ))}
-  </div>
-);
-
 export default function App() {
   const [view, setView] = useState<'home' | 'form'>('home');
   const [step, setStep] = useState<Step>(1);
@@ -1023,28 +998,7 @@ export default function App() {
 
 // --- Internal UI Helpers ---
 
-const Field: React.FC<{ label: string, children: React.ReactNode, required?: boolean }> = ({ label, children, required }) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 flex items-center gap-1 ml-1">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    {children}
-  </div>
-);
 
-const Tag: React.FC<{ label: string, active: boolean, onClick: () => void }> = ({ label, active, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
-      active 
-        ? 'bg-brand-blue border-brand-blue text-white shadow-md' 
-        : 'bg-white border-slate-100 text-slate-400 hover:border-brand-blue/20'
-    }`}
-  >
-    {label}
-  </button>
-);
 
 const UploadBox: React.FC<{ label: string, icon: any, onFileSelect: (file: File) => void, isUploaded: boolean, progress?: number, accept?: string }> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept }) => {
   const [fileName, setFileName] = useState<string | null>(null);
