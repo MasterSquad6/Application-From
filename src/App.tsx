@@ -28,6 +28,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { submitApplication, uploadToImageKit } from './lib/firebase';
+import DebugConsole from './components/DebugConsole';
 
 // --- Types ---
 
@@ -622,6 +623,7 @@ export default function App() {
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 px-6 overflow-y-auto">
+      <DebugConsole />
       <div className="max-w-3xl mx-auto">
         <button 
           onClick={handleBack}
