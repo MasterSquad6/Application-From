@@ -12,16 +12,20 @@ export const db = (firebaseConfig as any).firestoreDatabaseId
 export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Proxied Upload URL
-const PROXY_UPLOAD_URL = '/api/app-upload';
+const PROXY_UPLOAD_URL = '/api/process-upload';
 
 export async function uploadToImageKit(file: File, onProgress?: (progress: number) => void): Promise<string> {
-  console.log(`[Upload] Starting upload for: ${file.name} via Proxy`);
+  console.log(`[Upload] Starting upload for: ${file.name} to ${PROXY_UPLOAD_URL}`);
   
   return new Promise((resolve, reject) => {
     const formData = new FormData();
+    // Unique file name with timestamp
+    const uniqueName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    
     formData.append('file', file);
-    formData.append('fileName', `${Date.now()}_${file.name}`);
+    formData.append('fileName', uniqueName);
     formData.append('folder', '/shopverse_applications');
+    formData.append('useUniqueFileName', 'true');
 
     const xhr = new XMLHttpRequest();
 

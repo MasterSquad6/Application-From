@@ -26,6 +26,17 @@ async function startServer() {
     next();
   });
 
+  // Basic CORS support
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -110,8 +121,9 @@ async function startServer() {
     }
   };
 
-  app.post('/api/app-upload', upload.single('file'), uploadHandler);
+  app.post('/api/process-upload', upload.single('file'), uploadHandler);
   app.post('/api/upload', upload.single('file'), uploadHandler);
+  app.post('/api/app-upload', upload.single('file'), uploadHandler);
 
   // Health check for configuration
   app.get('/api/config-check', (req, res) => {
