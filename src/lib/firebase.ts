@@ -12,7 +12,7 @@ export const db = (firebaseConfig as any).firestoreDatabaseId
 export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Proxied Upload URL
-const PROXY_UPLOAD_URL = '/api/upload';
+const PROXY_UPLOAD_URL = '/api/app-upload';
 
 export async function uploadToImageKit(file: File, onProgress?: (progress: number) => void): Promise<string> {
   console.log(`[Upload] Starting upload for: ${file.name} via Proxy`);
