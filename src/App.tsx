@@ -936,6 +936,8 @@ export default function App() {
                       <input 
                         type="url" 
                         placeholder="https://facebook.com/..."
+                        value={formData.facebookLink}
+                        onChange={e => updateField('facebookLink', e.target.value)}
                         className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:bg-white focus:border-brand-blue transition-all"
                       />
                     </Field>

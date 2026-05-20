@@ -9,34 +9,45 @@ import FormData from 'form-data';
 
 dotenv.config();
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+});
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   // Handle upload proxy for AI Studio
-  app.post('/api/proxy-upload', upload.single('file'), async (req, res) => {
+  const uploadHandler = async (req: any, res: any) => {
     try {
       const file = req.file;
       const fileName = req.body.fileName;
       const folder = req.body.folder || '/shopverse_applications';
 
-      // Prefer environment variable, fallback to hardcoded if not set
-      const privateKey = process.env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
+      // Strictly hardcoded as requested by user to avoid configuration issues
+      const privateKey = 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
 
       if (!file) {
         console.warn('[Proxy] Upload attempt with no file');
+        console.log('[Proxy] Request body:', req.body);
         return res.json({ success: false, error: 'No file provided' });
       }
+
+      console.log('[Proxy] File received:', file.originalname, file.mimetype, file.size, 'bytes');
 
       const authHeader = 'Basic ' + Buffer.from(privateKey + ':').toString('base64');
       
       const cleanFileName = (fileName || file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
       const form = new FormData();
-      // Use Base64 string for the file to avoid binary transmission issues in proxy
-      const base64File = file.buffer.toString('base64');
-      form.append('file', base64File);
+      
+      // Use the raw buffer directly - this is the most robust way
+      form.append('file', file.buffer, {
+        filename: cleanFileName,
+        contentType: file.mimetype
+      });
       
       form.append('fileName', cleanFileName);
       form.append('folder', folder);
@@ -48,7 +59,7 @@ async function startServer() {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          ...form.getHeaders(), // Extremely important for the boundary
+          ...form.getHeaders(),
         },
         body: form as any,
       });
@@ -68,7 +79,6 @@ async function startServer() {
 
       if (!response.ok) {
         console.error('[Proxy] ImageKit API returned error:', response.status, result);
-        // Forward the exact error message from ImageKit if available
         const ikMessage = result.message || (result.error && result.error.message) || 'Unknown ImageKit error';
         return res.json({ 
           success: false, 
@@ -83,9 +93,16 @@ async function startServer() {
       res.json({ success: true, url: result.url });
     } catch (error) {
       console.error('[Proxy] Critical Error:', error);
-      res.json({ success: false, error: 'Internal proxy error', message: error instanceof Error ? error.message : String(error) });
+      res.json({ 
+        success: false, 
+        error: 'Internal proxy error', 
+        message: error instanceof Error ? error.message : String(error) 
+      });
     }
-  });
+  };
+
+  app.post('/api/proxy-upload', upload.single('file'), uploadHandler);
+  app.post('/api/upload', upload.single('file'), uploadHandler);
 
   // Health check for configuration
   app.get('/api/config-check', (req, res) => {

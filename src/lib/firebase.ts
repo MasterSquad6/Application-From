@@ -11,10 +11,8 @@ export const db = (firebaseConfig as any).firestoreDatabaseId
   : getFirestore(app);
 export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
-// Cloudflare Pages Proxy Upload URL (or AI Studio Dev Proxy)
-const PROXY_UPLOAD_URL = typeof window !== 'undefined' && (window.location.hostname.includes('ais-dev') || window.location.hostname.includes('ais-pre'))
-  ? '/api/proxy-upload' 
-  : '/api/upload';
+// Proxied Upload URL
+const PROXY_UPLOAD_URL = '/api/upload';
 
 export async function uploadToImageKit(file: File, onProgress?: (progress: number) => void): Promise<string> {
   console.log(`[Upload] Starting upload for: ${file.name} via Proxy`);

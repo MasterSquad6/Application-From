@@ -13,17 +13,17 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
     const privateKey = env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
 
     if (!file) {
+      console.error('[Upload Function] No file provided');
       return new Response(JSON.stringify({ error: 'No file provided' }), { status: 400 });
     }
 
-    const cleanFileName = (fileName || file.name).replace(/[^a-zA-Z0-9.-]/g, '_');
+    console.log('[Upload Function] File details:', { name: (file as any).name, type: file.type, size: file.size });
 
-    const arrayBuffer = await file.arrayBuffer();
-    const base64File = btoa(Array.from(new Uint8Array(arrayBuffer)).map(b => String.fromCharCode(b)).join(''));
+    const cleanFileName = (fileName || (file as any).name || 'unknown_file').replace(/[^a-zA-Z0-9.-]/g, '_');
 
     // ImageKit Upload API expects a specific multipart/form-data structure
     const ikFormData = new FormData();
-    ikFormData.append('file', base64File);
+    ikFormData.append('file', file);
     ikFormData.append('fileName', cleanFileName);
     ikFormData.append('folder', folder);
     ikFormData.append('useUniqueFileName', 'true');
