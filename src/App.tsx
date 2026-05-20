@@ -341,9 +341,71 @@ const TrustSection = () => (
 
 // --- Form Components ---
 
+const Progress = ({ step }: { step: Step }) => (
+  <div className="flex items-center justify-between gap-1 sm:gap-2 mb-10 max-w-md mx-auto">
+    {[
+      { s: 1, l: 'ব্যক্তিগত' },
+      { s: 2, l: 'অভিজ্ঞতা' },
+      { s: 3, l: 'দক্ষতা' },
+      { s: 4, l: 'ডকুমেন্ট' }
+    ].map((item) => (
+      <div key={item.s} className="flex flex-col items-center gap-2 flex-1 last:flex-none">
+        <div className="flex items-center gap-1 sm:gap-2 w-full">
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-xs sm:text-sm transition-all duration-500 flex-shrink-0 ${
+            step >= item.s ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30' : 'bg-white border-2 border-slate-100 text-slate-300'
+          }`}>
+            {step > item.s ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : item.s}
+          </div>
+          {item.s < 4 && <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step > item.s ? 'bg-brand-blue' : 'bg-slate-100'}`} />}
+        </div>
+        <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${step >= item.s ? 'text-brand-blue' : 'text-slate-300'}`}>
+          {item.l}
+        </span>
+      </div>
+    ))}
+  </div>
+);
+
+const Field: React.FC<{ label: string, required?: boolean, children: React.ReactNode }> = ({ label, required, children }) => (
+  <div className="space-y-2">
+    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">
+      {label} {required && <span className="text-red-400">*</span>}
+    </label>
+    {children}
+  </div>
+);
+
+const UploadBox: React.FC<{ label: string, icon: any, onFileSelect: (f: File) => void, isUploaded: boolean, progress?: number, accept?: string }> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept }) => (
+  <label className={`relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isUploaded ? 'border-brand-blue bg-brand-blue/5' : 'border-slate-200 bg-slate-50 hover:border-brand-blue/30'}`}>
+    <Icon className={`w-8 h-8 ${isUploaded ? 'text-brand-blue' : 'text-slate-400'}`} />
+    <span className={`text-xs font-bold ${isUploaded ? 'text-brand-blue' : 'text-slate-500'}`}>{label}</span>
+    <input type="file" className="hidden" accept={accept} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} />
+    {progress !== undefined && progress < 100 && (
+      <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl p-4">
+        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <div className="bg-brand-blue h-full transition-all" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+    )}
+  </label>
+);
+
+const Tag: React.FC<{ label: string, active: boolean, onClick: () => void }> = ({ label, active, onClick }) => (
+  <button 
+    type="button"
+    onClick={onClick}
+    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+      active 
+        ? 'bg-brand-blue text-white shadow-md' 
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+    }`}
+  >
+    {label}
+  </button>
+);
+
 export default function App() {
-  const [view, setView] = useState<'home' | 'form'>('home');
-  const [step, setStep] = useState<Step>(1);
+  const [view, setView] = useState<'home' | 'form'>('home');  const [step, setStep] = useState<Step>(1);
   const [formData, setFormData] = useState<ApplicationData>(initialData);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -996,68 +1058,3 @@ export default function App() {
   );
 }
 
-// --- Internal UI Helpers ---
-
-
-
-const UploadBox: React.FC<{ label: string, icon: any, onFileSelect: (file: File) => void, isUploaded: boolean, progress?: number, accept?: string }> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept }) => {
-  const [fileName, setFileName] = useState<string | null>(null);
-  const uploading = progress !== undefined && progress >= 0 && progress < 100;
-
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ফাইল সাইজ ৫MB এর বেশি হতে পারবে না!');
-      return;
-    }
-
-    setFileName(file.name);
-    await onFileSelect(file);
-  };
-
-  return (
-    <div className="relative group">
-      <input 
-        type="file" 
-        onChange={handleFileChange}
-        disabled={uploading}
-        accept={accept}
-        className={`absolute inset-0 opacity-0 cursor-pointer z-10 ${uploading ? 'pointer-events-none' : ''}`} 
-      />
-      <div className={`p-6 lg:p-8 border-2 border-dashed rounded-3xl transition-all text-center relative overflow-hidden ${
-        isUploaded 
-          ? 'border-emerald-200 bg-emerald-50' 
-          : 'border-slate-100 group-hover:border-brand-blue/30 group-hover:bg-brand-blue/5'
-      }`}>
-        {/* Progress Bar Background */}
-        {uploading && (
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-brand-blue transition-all duration-300" 
-            style={{ width: `${progress}%` }}
-          />
-        )}
-
-        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mx-auto mb-3 lg:mb-4 border border-slate-50 relative">
-          {uploading ? (
-            <div className="relative flex items-center justify-center">
-              <Loader2 className="w-5 h-5 lg:w-6 lg:h-6 text-brand-blue animate-spin" />
-              <span className="absolute text-[8px] font-black text-brand-blue">{progress}%</span>
-            </div>
-          ) : isUploaded ? (
-            <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-500" />
-          ) : (
-            <Icon className="w-5 h-5 lg:w-6 lg:h-6 text-slate-300 group-hover:text-brand-blue transition-colors" />
-          )}
-        </div>
-        <p className={`text-xs font-bold mb-1 ${isUploaded ? 'text-emerald-700' : 'text-slate-600'}`}>
-          {uploading ? `আপলোড হচ্ছে... ${progress}%` : isUploaded ? 'ফাইল আপলোড হয়েছে' : label}
-        </p>
-        <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold truncate px-2">
-          {uploading ? 'দয়া করে অপেক্ষা করুন' : isUploaded ? fileName : 'ক্লিক করুন অথবা ড্র্যাগ করুন'}
-        </p>
-      </div>
-    </div>
-  );
-};
