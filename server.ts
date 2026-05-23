@@ -23,6 +23,9 @@ async function startServer() {
   // Request logging
   app.use((req, res, next) => {
     console.log(`[Server] ${req.method} ${req.url}`);
+    if (req.method === 'POST' && req.url.includes('/api/upload')) {
+      console.log('[Server] Upload endpoint called');
+    }
     next();
   });
 
@@ -49,11 +52,13 @@ async function startServer() {
 
       // Prefer environment variable, fallback to hardcoded
       const privateKey = process.env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
+      
+      console.log(`[Proxy] Using Private Key: ${privateKey.substring(0, 8)}...`);
 
       if (!file) {
         console.warn('[Proxy] Upload attempt with no file');
         console.log('[Proxy] Request body:', req.body);
-        return res.json({ success: false, error: 'No file provided' });
+        return res.status(400).json({ success: false, error: 'No file provided' });
       }
 
       console.log('[Proxy] File received:', file.originalname, file.mimetype, file.size, 'bytes');

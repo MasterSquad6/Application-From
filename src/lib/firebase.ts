@@ -45,12 +45,15 @@ export async function uploadToImageKit(file: File, onProgress?: (progress: numbe
         result = JSON.parse(xhr.responseText);
       } catch (e) {
         console.error('[Upload] Parse error (Status ' + xhr.status + '):', xhr.responseText);
-        reject(new Error(`Server error (${xhr.status}): Could not parse response.`));
+        reject(new Error(`Server error (${xhr.status}): Invalid JSON response.`));
         return;
       }
       
+      console.log(`[Upload] Server response (${xhr.status}):`, result);
+
       if (xhr.status >= 200 && xhr.status < 300) {
         if (result.success === false) {
+          console.error('[Upload] Server reported failure:', result);
           reject(new Error(result.message || result.error || 'Upload failed'));
         } else if (result.url) {
           console.log(`[Upload] Successful: ${result.url}`);
@@ -62,8 +65,8 @@ export async function uploadToImageKit(file: File, onProgress?: (progress: numbe
         }
       } else {
         const detailedError = result.message || result.error || xhr.statusText || 'Unknown error';
-        console.error(`[Upload] HTTP ${xhr.status}:`, xhr.responseText);
-        reject(new Error(detailedError));
+        console.error(`[Upload] HTTP ${xhr.status} Error:`, detailedError, result);
+        reject(new Error(`Upload failed (${xhr.status}): ${detailedError}`));
       }
     };
 

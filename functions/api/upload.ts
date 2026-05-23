@@ -11,21 +11,22 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
 
     // Prefer environment variable, fallback to hardcoded if not set
     const privateKey = env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
-    if (!privateKey) {
-      console.error('[Upload Function] Missing IMAGEKIT_PRIVATE_KEY');
-      return new Response(JSON.stringify({ error: 'Server misconfiguration: Missing ImageKit Key' }), { status: 500 });
-    }
+    
+    // Debug log for key presence (DO NOT LOG FULL KEY)
+    console.log(`[Upload Function] Private Key loaded: ${privateKey ? privateKey.substring(0, 8) + '...' : 'MISSING'}`);
 
     if (!file) {
-      console.error('[Upload Function] No file provided');
-      return new Response(JSON.stringify({ error: 'No file provided' }), { status: 400 });
+      return new Response(JSON.stringify({ success: false, error: 'No file provided' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log('[Upload Function] File details:', { name: (file as any).name, type: file.type, size: file.size });
+    console.log('[Upload Function] Processing:', { name: file.name, type: file.type, size: file.size });
 
-    const cleanFileName = (fileName || (file as any).name || 'unknown_file').replace(/[^a-zA-Z0-9.-]/g, '_');
+    const cleanFileName = (fileName || file.name || 'upload_' + Date.now()).replace(/[^a-zA-Z0-9.-]/g, '_');
 
-    // ImageKit Upload API expects a specific multipart/form-data structure
+    // Create a new FormData for ImageKit
     const ikFormData = new FormData();
     ikFormData.append('file', file);
     ikFormData.append('fileName', cleanFileName);
@@ -34,22 +35,44 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
 
     const authHeader = 'Basic ' + btoa(privateKey + ':');
 
+    console.log('[Upload Function] Forwarding to ImageKit...');
+
     const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
+        // DO NOT set Content-Type header, let fetch set it with boundary
       },
       body: ikFormData,
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('[Upload Function] ImageKit API Error:', result);
-      return new Response(JSON.stringify({ error: 'Upload failed', details: result }), { status: response.status });
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error('[Upload Function] Non-JSON response:', responseText);
+      return new Response(JSON.stringify({ success: false, error: 'Invalid response from ImageKit', details: responseText }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return new Response(JSON.stringify({ url: (result as any).url }), {
+    if (!response.ok) {
+      console.error('[Upload Function] ImageKit API Error:', response.status, result);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'ImageKit Error', 
+        message: result.message || 'Upload failed',
+        details: result 
+      }), { 
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('[Upload Function] Success:', result.url);
+    return new Response(JSON.stringify({ success: true, url: result.url }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
