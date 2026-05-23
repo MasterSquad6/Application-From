@@ -47,8 +47,8 @@ async function startServer() {
       const fileName = req.body.fileName;
       const folder = req.body.folder || '/shopverse_applications';
 
-      // Strictly hardcoded as requested by user to avoid configuration issues
-      const privateKey = 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
+      // Prefer environment variable, fallback to hardcoded
+      const privateKey = process.env.IMAGEKIT_PRIVATE_KEY || 'private_XcrPV5epyI0QefKFJjAyza0ivSw=';
 
       if (!file) {
         console.warn('[Proxy] Upload attempt with no file');
