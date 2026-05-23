@@ -145,13 +145,75 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 export async function submitApplication(data: any) {
   const path = 'applications';
   try {
+    // Generate a 6-digit numeric password
+    const password = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Create a nicer display ID (shortened version of timestamp + random)
+    const displayId = `SV-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
     const docRef = await addDoc(collection(db, path), {
       ...data,
+      displayId,
+      password,
       status: 'pending',
+      adminNote: '',
       submittedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
-    return docRef.id;
+
+    return { 
+      id: docRef.id, 
+      displayId, 
+      password 
+    };
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function getApplicationByDisplayId(displayId: string, password?: string) {
+  const path = 'applications';
+  try {
+    const { query, where, getDocs } = await import('firebase/firestore');
+    
+    let q;
+    if (password) {
+      // Secure mode: query by both for rule enforcement
+      q = query(
+        collection(db, path), 
+        where('displayId', '==', displayId),
+        where('password', '==', password)
+      );
+    } else {
+      // Admin mode or initial fetch (will fail if not admin or rules don't allow)
+      q = query(
+        collection(db, path), 
+        where('displayId', '==', displayId)
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) return null;
+    
+    return { id: querySnapshot.docs[0].id, ...(querySnapshot.docs[0].data() as object) } as any;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, `${path}/${displayId}`);
+  }
+}
+
+export async function updateApplicationStatus(docId: string, status: string, note: string) {
+  const path = 'applications';
+  try {
+    const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+    const docRef = doc(db, path, docId);
+    await updateDoc(docRef, {
+      status,
+      adminNote: note,
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${path}/${docId}`);
   }
 }

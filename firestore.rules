@@ -25,23 +25,34 @@ service cloud.firestore {
 
     // Application validation
     function isValidApplication(data) {
-      return data.keys().hasAll(['fullName', 'email', 'phone', 'position', 'experience', 'submittedAt', 'status'])
+      return data.keys().hasAll(['fullName', 'email', 'phone', 'position', 'experience', 'submittedAt', 'updatedAt', 'displayId', 'password', 'status', 'adminNote'])
         && data.fullName is string && data.fullName.size() <= 100
         && data.email is string && data.email.size() <= 100
         && data.phone is string && data.phone.size() <= 20
-        && data.position is string
-        && data.experience is string
+        && data.displayId is string && data.displayId.size() <= 50
+        && data.password is string && data.password.size() == 6
+        && data.status is string
         && data.submittedAt == request.time
-        && data.status == 'pending'
-        && (data.get('platforms', []) is list)
-        && (data.get('skills', []) is list)
-        && (data.get('tools', []) is list)
-        && (data.get('imageUrls', {}) is map);
+        && data.updatedAt == request.time;
     }
 
     match /applications/{applicationId} {
       allow create: if isValidId(applicationId) && isValidApplication(incoming());
-      allow read, list, update, delete: if isAdmin();
+      
+      // Allow candidates to check their own status if they know their ID AND Password
+      allow list: if isAdmin() || (
+        request.query.limit <= 1 &&
+        request.query.filters.displayId == resource.data.displayId &&
+        request.query.filters.password == resource.data.password
+      );
+
+      // Allow getting specific doc if it matches known state (though app uses list/query mostly)
+      allow get: if isAdmin() || (
+        resource.data.displayId == request.query.filters.displayId &&
+        resource.data.password == request.query.filters.password
+      );
+
+      allow update, delete: if isAdmin();
     }
 
     match /admins/{adminId} {

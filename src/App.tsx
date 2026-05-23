@@ -25,9 +25,14 @@ import {
   Send,
   Upload,
   AlertCircle,
-  Loader2
+  Loader2,
+  Search,
+  Lock,
+  History,
+  FileSearch,
+  MessageCircle
 } from 'lucide-react';
-import { submitApplication, uploadToImageKit } from './lib/firebase';
+import { submitApplication, uploadToImageKit, getApplicationByDisplayId, updateApplicationStatus } from './lib/firebase';
 import DebugConsole from './components/DebugConsole';
 
 // --- Types ---
@@ -56,6 +61,17 @@ interface ApplicationData {
   facebookLink: string;
   agree: boolean;
   imageUrls: Record<string, string>;
+}
+
+interface ApplicationStatus {
+  id: string;
+  displayId: string;
+  password?: string;
+  status: string;
+  adminNote?: string;
+  fullName: string;
+  position: string;
+  submittedAt?: any;
 }
 
 const initialData: ApplicationData = {
@@ -114,13 +130,13 @@ const Brand: React.FC<{ logo: string, name: string, color?: string }> = ({ logo,
   </div>
 );
 
-const Navbar = ({ onApply }: { onApply: () => void }) => (
+const Navbar = ({ onApply, onHistory }: { onApply: () => void, onHistory: () => void }) => (
   <motion.nav 
     initial={{ y: -100 }}
     animate={{ y: 0 }}
     className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-brand-blue/10 px-6 py-4 flex items-center justify-between"
   >
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.reload()}>
       <div className="w-10 h-10 rounded-xl bg-linear-to-br from-brand-blue to-brand-glow flex items-center justify-center shadow-lg shadow-brand-blue/20">
         <ShoppingBag className="text-white w-5 h-5" />
       </div>
@@ -128,7 +144,13 @@ const Navbar = ({ onApply }: { onApply: () => void }) => (
     </div>
     
     <div className="flex items-center gap-4">
-      <div className="hidden md:flex bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-3 py-1.5 rounded-full tracking-wider uppercase animate-pulse">
+      <button 
+        onClick={onHistory}
+        className="hidden md:flex items-center gap-2 text-slate-500 hover:text-brand-blue transition-colors px-4 py-2 font-bold text-sm"
+      >
+        <History className="w-4 h-4" /> হিস্টোরি
+      </button>
+      <div className="hidden lg:flex bg-brand-blue/10 text-brand-blue text-[11px] font-bold px-3 py-1.5 rounded-full tracking-wider uppercase animate-pulse">
         ⚡ আমরা নিয়োগ দিচ্ছি
       </div>
       <button 
@@ -141,42 +163,35 @@ const Navbar = ({ onApply }: { onApply: () => void }) => (
   </motion.nav>
 );
 
-const Hero = ({ onApply }: { onApply: () => void }) => {
+const Hero = ({ onApply, onSearch, searchError, searchLoading }: { 
+  onApply: () => void, 
+  onSearch: (id: string, pass: string) => void,
+  searchError: string | null,
+  searchLoading: boolean
+}) => {
   const [applicants, setApplicants] = React.useState<{n:string, t:string, p:string, i:string}[]>([
     { n: 'রাকিব আহমেদ', t: '৩ মিনিট আগে', p: 'CS অ্যাডমিন', i: 'R' },
     { n: 'ফাতেমা আক্তার', t: '১২ মিনিট আগে', p: 'VA', i: 'F' },
     { n: 'নাসির হোসেন', t: '২৫ মিনিট আগে', p: 'CS অ্যাডমিন', i: 'N' },
   ]);
+  
+  const [sId, setSId] = useState('');
+  const [sPass, setSPass] = useState('');
 
   React.useEffect(() => {
     const names = [
       'রাকিব আহমেদ', 'ফাতেমা আক্তার', 'নাসির হোসেন', 'আহনাফ শাহরিয়ার', 'সাদিয়া ইসলাম', 
       'তানজিমুল হক', 'নুসরাত জাহান', 'রাইয়ান আহমেদ', 'সাবরিনা চৌধুরী', 'ইশতিয়াক আহমেদ', 
       'মারিয়া হোসাইন', 'ফাহিম মোর্শেদ', 'আনিকা তাহসিন', 'মাহমুদুল হাসান', 'তাসনিম সুমি', 
-      'জায়েদ বিন রশিদ', 'সুমাইয়া বিনতে আলম', 'নাইমুল ইসলাম', 'জিনাত রেহানা', 'আরিফুল হক', 
-      'মেহজাবিন চৌধুরী', 'ওয়াসিফ আহমেদ', 'ফারজানা ববি', 'সায়েম চৌধুরী', 'নিশাত আনজুম', 
-      'রাফসান জনি', 'লামিয়া ফেরদৌস', 'শাহাদাত হোসেন', 'উম্মে হাবিবা', 'তাওসিফ মাহবুব', 
-      'সোহানা সাবাহ', 'জুবায়ের আহমেদ', 'রাবেয়া সুলতানা', 'মুস্তাকিম বিল্লাহ', 'আফসানা মিমি', 
-      'নাবিল হাসান', 'উর্মি আক্তার', 'শফিউল আলম', 'আরিফুর রহমান', 'তানজিনা মিমি', 
-      'খায়রুল বাসার', 'সাদিকা পারভীন', 'মাসুদ রানা', 'তানিয়া বৃষ্টি', 'সৈকত ইসলাম', 
-      'শারমিন সুলতানা', 'আশরাফুল ইসলাম', 'মোস্তফা কামাল', 'হুমায়রা হিমু', 'ইকবাল হোসাইন'
+      'জায়েদ বিন রশিদ', 'সুমাইয়া বিনতে আলম', 'নাইমুল ইসলাম', 'জিনাত রেহানা', 'আরিফুল হক'
     ];
     const positions = ['CS অ্যাডমিন', 'VA'];
     
     const interval = setInterval(() => {
       const randomName = names[Math.floor(Math.random() * names.length)];
       const randomPos = positions[Math.floor(Math.random() * positions.length)];
-      const initial = randomName.charAt(0); 
-      
-      const newApp = {
-        n: randomName,
-        t: 'এইমাত্র',
-        p: randomPos,
-        i: initial
-      };
-      
-      setApplicants(prev => [newApp, ...prev.slice(0, 2)]);
-    }, 2700000); // New applicant every 45 mins (45 * 60 * 1000)
+      setApplicants(prev => [{ n: randomName, t: 'এইমাত্র', p: randomPos, i: randomName.charAt(0) }, ...prev.slice(0, 2)]);
+    }, 2700000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -208,6 +223,54 @@ const Hero = ({ onApply }: { onApply: () => void }) => {
           আমাদের প্রিমিয়াম ই-কমার্স প্ল্যাটফর্মে CS Admin বা Virtual Assistant হিসেবে যোগ দিন। রিমোট কাজ এবং গ্লোবাল ক্যারিয়ার গ্রোথ আমাদের সাথে।
         </p>
         
+        <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white mb-10 max-w-md mx-auto lg:mx-0 shadow-2xl shadow-brand-blue/5 text-left">
+          <div className="flex items-center gap-2 mb-4">
+            <History className="w-4 h-4 text-brand-blue" />
+            <h4 className="text-xs font-black text-brand-deep uppercase tracking-widest">হিষ্ট্রোরি চেক করুন</h4>
+          </div>
+          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); onSearch(sId, sPass); }}>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="আপনার আইডি (SV-XXXXXX-XXX)"
+                value={sId}
+                onChange={e => { setSId(e.target.value); }}
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-100 bg-white/80 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm font-bold"
+              />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="password" 
+                placeholder="পাসওয়ার্ড (৬ সংখ্যা)"
+                value={sPass}
+                onChange={e => { setSPass(e.target.value); }}
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-100 bg-white/80 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm font-bold"
+              />
+            </div>
+            
+            {searchError && (
+              <motion.div 
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-100 mb-2"
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-red-600 font-bold leading-tight">{searchError}</p>
+              </motion.div>
+            )}
+
+            <button 
+              type="submit"
+              disabled={searchLoading}
+              className="w-full bg-brand-deep text-white py-3 rounded-xl font-bold hover:bg-brand-blue transition-all active:scale-95 shadow-lg shadow-brand-deep/10 text-sm flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'আবেদন দেখুন'}
+            </button>
+          </form>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
           <button 
             onClick={onApply}
@@ -217,10 +280,6 @@ const Hero = ({ onApply }: { onApply: () => void }) => {
             <span className="relative flex items-center justify-center gap-3">
               🚀 এখনই আবেদন করুন <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </span>
-          </button>
-          
-          <button className="px-10 py-5 rounded-2xl border-2 border-brand-blue/10 bg-white text-brand-deep font-bold hover:bg-slate-50 transition-colors text-lg">
-            বিস্তারিত দেখুন
           </button>
         </div>
       </motion.div>
@@ -375,16 +434,55 @@ const Field: React.FC<{ label: string, required?: boolean, children: React.React
   </div>
 );
 
-const UploadBox: React.FC<{ label: string, icon: any, onFileSelect: (f: File) => void, isUploaded: boolean, progress?: number, accept?: string }> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept }) => (
-  <label className={`relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isUploaded ? 'border-brand-blue bg-brand-blue/5' : 'border-slate-200 bg-slate-50 hover:border-brand-blue/30'}`}>
-    <Icon className={`w-8 h-8 ${isUploaded ? 'text-brand-blue' : 'text-slate-400'}`} />
-    <span className={`text-xs font-bold ${isUploaded ? 'text-brand-blue' : 'text-slate-500'}`}>{label}</span>
-    <input type="file" className="hidden" accept={accept} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} />
-    {progress !== undefined && progress < 100 && (
-      <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl p-4">
-        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-          <div className="bg-brand-blue h-full transition-all" style={{ width: `${progress}%` }} />
+const UploadBox: React.FC<{ 
+  label: string, 
+  icon: any, 
+  onFileSelect: (f: File) => void, 
+  isUploaded: boolean, 
+  progress?: number, 
+  accept?: string,
+  previewUrl?: string 
+}> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept, previewUrl }) => (
+  <label className={`relative group flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer h-[180px] overflow-hidden ${
+    isUploaded ? 'border-brand-blue bg-brand-blue/5' : 'border-slate-200 bg-slate-50 hover:border-brand-blue/30'
+  }`}>
+    {previewUrl && (
+      <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-10 transition-opacity">
+        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+      </div>
+    )}
+    
+    <div className="relative z-10 flex flex-col items-center gap-2">
+      <div className={`p-3 rounded-xl transition-all ${isUploaded ? 'bg-brand-blue text-white shadow-lg' : 'bg-white text-slate-400 group-hover:scale-110'}`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <span className={`text-[10px] font-black uppercase tracking-widest ${isUploaded ? 'text-brand-blue' : 'text-slate-500'}`}>{label}</span>
+      
+      {isUploaded && !progress && (
+        <div className="mt-1 flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+          <CheckCircle2 className="w-3 h-3" />
+          <span className="text-[10px] font-black">আপলোড সম্পন্ন</span>
         </div>
+      )}
+    </div>
+
+    <input type="file" className="hidden" accept={accept || "image/*"} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} />
+    
+    {progress !== undefined && progress > 0 && progress < 100 && (
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 p-4 transition-all backdrop-blur-sm">
+        <div className="relative w-16 h-16 flex items-center justify-center mb-2">
+          <svg className="w-full h-full -rotate-90">
+            <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+            <circle 
+              cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="4" 
+              strokeDasharray={176}
+              strokeDashoffset={176 - (176 * progress) / 100}
+              className="text-brand-blue transition-all duration-300" 
+            />
+          </svg>
+          <span className="absolute font-black text-xs text-brand-blue">{Math.round(progress)}%</span>
+        </div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">ফাইল আপলোড হচ্ছে</p>
       </div>
     )}
   </label>
@@ -405,11 +503,25 @@ const Tag: React.FC<{ label: string, active: boolean, onClick: () => void }> = (
 );
 
 export default function App() {
-  const [view, setView] = useState<'home' | 'form'>('home');  const [step, setStep] = useState<Step>(1);
+  const [view, setView] = useState<'home' | 'form' | 'status' | 'admin'>('home');
+  const [step, setStep] = useState<Step>(1);
   const [formData, setFormData] = useState<ApplicationData>(initialData);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<{displayId: string, password: string} | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  
+  // Status View States
+  const [searchId, setSearchId] = useState('');
+  const [searchPass, setSearchPass] = useState('');
+  const [currentApp, setCurrentApp] = useState<ApplicationStatus | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Admin View States
+  const [adminNote, setAdminNote] = useState('');
+  const [adminStatus, setAdminStatus] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -427,15 +539,38 @@ export default function App() {
   const handleBack = (e?: MouseEvent) => {
     e?.preventDefault();
     if (step > 1) setStep(prev => (prev - 1) as Step);
-    else setView('home');
+    else {
+      resetForm();
+      setView('home');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(initialData);
+    setStep(1);
+    setSubmitted(false);
+    setSubmissionResult(null);
+    setPreviews({});
+    setUploadProgress({});
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (step < 4) return;
+    
+    // Check if at least one file is uploaded
+    if (Object.keys(formData.imageUrls).length === 0) {
+      alert('দয়া করে অন্তত একটি ডকুমেন্টস (সিভি বা পরিচয়পত্র) আপলোড করুন।');
+      return;
+    }
+
     setSubmitting(true);
+    // Simulating a professional processing delay
+    await new Promise(r => setTimeout(r, 2000));
+    
     try {
-      await submitApplication(formData);
+      const result = await submitApplication(formData);
+      setSubmissionResult({ displayId: result.displayId, password: result.password });
       setSubmitting(false);
       setSubmitted(true);
     } catch (error) {
@@ -445,44 +580,107 @@ export default function App() {
     }
   };
 
+  const handleSearch = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!searchId) return;
+
+    setSearchLoading(true);
+    setSearchError(null);
+    try {
+      // Secret Admin Entry: ID "admin" + Pass "sv-admin-2026"
+      if (searchId.toLowerCase() === 'admin' && searchPass === 'sv-admin-2026') {
+        setView('admin');
+        return;
+      }
+
+      console.log(`[App] Searching for displayId: ${searchId}`);
+      const app = await getApplicationByDisplayId(searchId, searchPass);
+      if (app) {
+        setCurrentApp(app);
+        setAdminStatus(app.status);
+        setAdminNote(app.adminNote || '');
+        setView('status');
+      } else {
+        setSearchError('ভুল আইডি বা পাসওয়ার্ড। দয়া করে পুনরায় চেক করুন।');
+      }
+    } catch (error: any) {
+      setSearchError(error.message || 'অনুসন্ধানে সমস্যা হয়েছে।');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleAdminUpdate = async () => {
+    if (!currentApp) return;
+    setSubmitting(true);
+    try {
+      await updateApplicationStatus(currentApp.id, adminStatus, adminNote);
+      alert('স্ট্যাটাস আপডেট সফল হয়েছে!');
+      const updated = await getApplicationByDisplayId(currentApp.displayId);
+      setCurrentApp(updated);
+    } catch (error) {
+      alert('আপডেট করা সম্ভব হয়নি।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleFileUpload = async (file: File, label: string) => {
     try {
       console.log(`[App] Uploading ${label}...`);
-      setUploadProgress(prev => ({ ...prev, [label]: 0 }));
+      
+      // Generate Preview
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        setPreviews(prev => ({ ...prev, [label]: url }));
+      }
+
+      setUploadProgress(prev => ({ ...prev, [label]: 1 }));
       
       const url = await uploadToImageKit(file, (progress) => {
         setUploadProgress(prev => ({ ...prev, [label]: progress }));
       });
       
       updateField('imageUrls', { ...formData.imageUrls, [label]: url });
+      setUploadProgress(prev => ({ ...prev, [label]: 100 }));
       console.log(`[App] ${label} upload complete!`);
     } catch (error) {
       console.error(`[App] ${label} upload failed:`, error);
       const errorMessage = error instanceof Error ? error.message : 'ফাইল আপলোড ব্যর্থ হয়েছে।';
-      
-      // Check if it's a configuration error
-      if (errorMessage.includes('ImageKit Private Key not configured')) {
-        alert('কনফিগারেশন সমস্যা: ImageKit Private Key সেট করা নেই। দয়া করে সেটিংস থেকে এটি সেট করুন।');
-      } else {
-        alert(`ফাইল আপলোড ব্যর্থ হয়েছে: ${errorMessage}`);
-      }
-    } finally {
-      // Keep progress at 100 or clear it
-      setTimeout(() => {
-        setUploadProgress(prev => {
-          const next = { ...prev };
-          delete next[label];
-          return next;
-        });
-      }, 1000);
+      alert(`ফাইল আপলোড ব্যর্থ হয়েছে: ${errorMessage}`);
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        delete next[label];
+        return next;
+      });
     }
   };
 
   if (view === 'home') {
     return (
       <div className="bg-slate-50 min-h-screen overflow-y-auto overflow-x-hidden">
-        <Navbar onApply={() => setView('form')} />
-        <Hero onApply={() => setView('form')} />
+        <Navbar 
+          onApply={() => { resetForm(); setView('form'); }} 
+          onHistory={() => {
+            const h = document.getElementById('search-section');
+            h?.scrollIntoView({ behavior: 'smooth' });
+          }} 
+        />
+        <Hero 
+          onApply={() => { resetForm(); setView('form'); }} 
+          onSearch={(id, pass) => {
+            setSearchId(id);
+            setSearchPass(pass);
+            handleSearch({ preventDefault: () => {} } as any);
+          }}
+          searchError={searchError}
+          searchLoading={searchLoading}
+        />
+
+        {/* Search History Quick Entry (Mobile) */}
+        <section id="search-section" className="md:hidden px-6 pb-12">
+           {/* Mobile search is already inside Hero but we keep this for consistency if needed */}
+        </section>
 
         {/* Company Identity Highlight */}
         <section className="px-6 py-12 lg:py-24 max-w-7xl mx-auto">
@@ -946,28 +1144,28 @@ export default function App() {
 
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                       <UploadBox 
-                        label="সিভি" 
+                        label="প্রোফাইল ফটো" 
+                        icon={Camera} 
+                        onFileSelect={(file) => handleFileUpload(file, 'photo')}
+                        isUploaded={!!formData.imageUrls.photo}
+                        progress={uploadProgress['photo']}
+                        previewUrl={previews['photo']}
+                      />
+                      <UploadBox 
+                        label="সিভি/রেজুমে" 
                         icon={FileText} 
                         onFileSelect={(file) => handleFileUpload(file, 'cv')}
-                        isUploaded={!!formData.imageUrls['cv']}
+                        isUploaded={!!formData.imageUrls.cv}
                         progress={uploadProgress['cv']}
-                        accept="image/*,.pdf,.doc,.docx"
+                        previewUrl={previews['cv']}
                       />
                       <UploadBox 
-                        label="ছবি/এনআইডি" 
-                        icon={Upload} 
-                        onFileSelect={(file) => handleFileUpload(file, 'identity')}
-                        isUploaded={!!formData.imageUrls['identity']}
-                        progress={uploadProgress['identity']}
-                        accept="image/*"
-                      />
-                      <UploadBox 
-                        label="সার্টিফিকেট" 
-                        icon={FileText} 
-                        onFileSelect={(file) => handleFileUpload(file, 'certificate')}
-                        isUploaded={!!formData.imageUrls['certificate']}
-                        progress={uploadProgress['certificate']}
-                        accept="image/*,.pdf,.doc,.docx"
+                        label="জাতীয় পরিচয়পত্র" 
+                        icon={ShieldCheck} 
+                        onFileSelect={(file) => handleFileUpload(file, 'nid')}
+                        isUploaded={!!formData.imageUrls.nid}
+                        progress={uploadProgress['nid']}
+                        previewUrl={previews['nid']}
                       />
                     </div>
 
@@ -1030,23 +1228,47 @@ export default function App() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[40px] shadow-premium p-16 text-center"
+            className="bg-white rounded-[40px] shadow-premium p-10 lg:p-16 text-center border border-slate-50"
           >
-            <div className="w-24 h-24 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-10 border-4 border-white shadow-xl">
-              <CheckCircle2 className="w-12 h-12" />
+            <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-8 border-4 border-white shadow-xl">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h2 className="font-display text-4xl font-extrabold text-brand-deep mb-4 tracking-tight">আবেদন সফলভাবে গ্রহণ করা হয়েছে!</h2>
-            <p className="text-slate-500 text-base lg:text-lg mb-10 max-w-sm mx-auto">
-              আমাদের নিয়োগকারী দল আপনার প্রোফাইল পর্যালোচনা করবে এবং পরবর্তী ২-৩ কার্যদিবসের মধ্যে আপনার সাথে যোগাযোগ করবে।
+            <h2 className="font-display text-3xl font-extrabold text-brand-deep mb-4 tracking-tight leading-tight">আবেদন সফলভাবে গ্রহণ করা হয়েছে!</h2>
+            <p className="text-slate-500 text-sm lg:text-base mb-10 max-w-lg mx-auto leading-relaxed">
+              ধন্যবাদ! আপনার আবেদনটি আমাদের সার্ভারে জমা হয়েছে। আমাদের <span className="font-bold text-brand-blue">HR রিক্রুটমেন্ট টিম</span> আপনার অভিজ্ঞতা এবং তথ্যাদি গুরুত্ব সহকারে পর্যালোচনা করবে। সাধারণত ৩-৫ কার্যদিবসের মধ্যে পরবর্তী ধাপ সম্পর্কে জানানো হয়।
             </p>
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 inline-block mb-12">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">আবেদন আইডি (Application ID)</span>
-              <span className="font-mono font-bold text-brand-blue text-lg">#SV-৮৪২-{Math.random().toString(36).substring(7).toUpperCase()}</span>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-blue/30 transition-all">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">আবেদন আইডি (Application ID)</span>
+                <span className="font-mono font-bold text-brand-blue text-2xl tracking-tighter">
+                  {submissionResult?.displayId || 'SV-XXX-XXX'}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-glow/30 transition-all">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">সিকিউরিটি পাসওয়ার্ড (Password)</span>
+                <span className="font-mono font-bold text-brand-glow text-2xl tracking-[0.2em] bg-brand-deep px-6 py-2 rounded-xl">
+                  {submissionResult?.password || 'XXXXXX'}
+                </span>
+              </div>
             </div>
-            <div>
+
+            <div className="p-6 rounded-3xl bg-linear-to-br from-amber-50 to-orange-50 border border-amber-100 flex gap-4 text-left mb-10 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+                <Lock className="w-6 h-6 text-amber-500" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-amber-900 mb-1">পাসওয়ার্ডটি অবশ্যই সংরক্ষণ করুন!</h4>
+                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                  আপনার আবেদনের অবস্থা (Pending, Approved, বা Rejected) জানতে এই আইডি এবং পাসওয়ার্ডটি অত্যন্ত জরুরি। হোমপেজের <span className="underline">"হিস্টোরি"</span> সেকশনে গিয়ে আপনি যেকোনো সময় আপনার আবেদনের বর্তমান আপডেট দেখতে পারবেন।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
               <button 
-                onClick={() => setView('home')}
-                className="bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-bold tracking-tight hover:bg-brand-blue transition-colors"
+                onClick={() => { resetForm(); setView('home'); }}
+                className="flex-1 bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-black tracking-tight hover:bg-brand-blue transition-all active:scale-95 shadow-xl shadow-brand-deep/20"
               >
                 হোমে ফিরে যান
               </button>
@@ -1054,6 +1276,189 @@ export default function App() {
           </motion.div>
         )}
       </div>
+
+      {/* STATUS VIEW MODAL */}
+      <AnimatePresence>
+        {view === 'status' && currentApp && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-brand-deep/80 backdrop-blur-xl"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white w-full max-w-lg rounded-[40px] shadow-2xl p-8 lg:p-12 relative overflow-hidden"
+            >
+              <button 
+                onClick={() => setView('home')}
+                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors"
+              >
+                <AlertCircle className="w-5 h-5 rotate-45 text-slate-400" />
+              </button>
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+                  <FileSearch className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-2xl text-brand-deep leading-none mb-1">আবেদনের তথ্য</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{currentApp.displayId}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6 mb-10">
+                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">আবেদনকারী</p>
+                      <p className="text-sm font-bold text-brand-deep">{currentApp.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">পদ</p>
+                      <p className="text-sm font-bold text-brand-deep">{currentApp.position === 'cs_admin' ? 'CS অ্যাডমিন' : 'ভার্চুয়াল অ্যাসিস্ট্যান্ট'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">যোগাযোগ</p>
+                      <p className="text-xs font-bold text-slate-600">{(currentApp as any).phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">জমা দেওয়ার তারিখ</p>
+                      <p className="text-xs font-bold text-slate-600">
+                        {currentApp.submittedAt?.toDate ? currentApp.submittedAt.toDate().toLocaleDateString('bn-BD') : 'অজানা'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">বর্তমান অবস্থা (Status)</p>
+                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-wider ${
+                        currentApp.status === 'approved' ? 'bg-emerald-100 text-emerald-600' :
+                        currentApp.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                        'bg-amber-100 text-amber-600'
+                      }`}>
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                          currentApp.status === 'approved' ? 'bg-emerald-500' :
+                          currentApp.status === 'rejected' ? 'bg-red-500' :
+                          'bg-amber-500'
+                        }`} />
+                        {currentApp.status === 'approved' ? 'গৃহীত (Approved)' :
+                         currentApp.status === 'rejected' ? 'বাতিল (Rejected)' :
+                         'বিবেচনাধীন (Pending)'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-3xl bg-brand-deep text-white shadow-xl shadow-brand-deep/20 relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                     <MessageCircle className="w-20 h-20" />
+                   </div>
+                   <h5 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-3 italic">অ্যাডমিন রেসপন্স</h5>
+                   <p className="text-sm font-medium leading-relaxed italic">
+                     {currentApp.adminNote || 'আপনার আবেদনটি বর্তমানে আমাদের নিয়োগকারী দল যাচাই করছে। দয়া করে ধৈর্য ধরুন।'}
+                   </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setView('home')}
+                className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+              >
+                বন্ধ করুন
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {view === 'admin' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-brand-deep/90 backdrop-blur-xl"
+          >
+            <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl p-8 lg:p-12 relative max-h-[90vh] overflow-y-auto">
+              <button 
+                onClick={() => setView('home')}
+                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors"
+              >
+                <AlertCircle className="w-5 h-5 rotate-45 text-slate-400" />
+              </button>
+
+              <h2 className="font-display font-black text-3xl mb-8 flex items-center gap-3">
+                <ShieldCheck className="text-brand-blue" />
+                অ্যাডমিন প্যানেল
+              </h2>
+
+              <div className="space-y-4 mb-10">
+                <div className="flex gap-4">
+                  <input 
+                    type="text" 
+                    placeholder="সার্চ আইডি (SV-XXX...)"
+                    value={searchId}
+                    onChange={e => setSearchId(e.target.value)}
+                    className="flex-1 px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50"
+                  />
+                  <button 
+                    onClick={() => handleSearch({ preventDefault: () => {} } as any)}
+                    className="px-8 bg-brand-blue text-white rounded-2xl font-bold"
+                  >
+                    খুঁজুন
+                  </button>
+                </div>
+
+                {currentApp ? (
+                  <div className="p-8 rounded-3xl border border-slate-100 bg-slate-50 space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <Field label="স্ট্যাটাস আপডেট করুন">
+                        <select 
+                          value={adminStatus} 
+                          onChange={e => setAdminStatus(e.target.value)}
+                          className="w-full px-6 py-4 rounded-xl border border-slate-200 bg-white"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </Field>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2">আবেদনকারী</p>
+                        <p className="font-bold text-brand-deep">{currentApp.fullName}</p>
+                        <p className="text-xs text-slate-400 mt-1">{currentApp.displayId}</p>
+                      </div>
+                    </div>
+
+                    <Field label="রেসপন্স / নোট লিখুন">
+                      <textarea 
+                        rows={6}
+                        value={adminNote}
+                        onChange={e => setAdminNote(e.target.value)}
+                        placeholder="অ্যাডমিন ফিডব্যাক এখানে লিখুন..."
+                        className="w-full px-6 py-4 rounded-xl border border-slate-200 bg-white outline-none focus:border-brand-blue transition-all"
+                      />
+                    </Field>
+
+                    <button 
+                      onClick={handleAdminUpdate}
+                      disabled={submitting}
+                      className="w-full bg-brand-deep text-white py-5 rounded-2xl font-black text-lg hover:bg-brand-blue transition-all disabled:opacity-50"
+                    >
+                      {submitting ? 'আপডেট হচ্ছে...' : 'পরিবর্তন সেভ করুন'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <p className="text-slate-400 font-medium">কোনো এন্ট্রি লোড করা নেই</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

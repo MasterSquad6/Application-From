@@ -25,10 +25,14 @@
         "salaryExpectation": { "type": "string", "description": "Expected monthly salary" },
         "facebookLink": { "type": "string", "description": "Social media profile link" },
         "imageUrls": { "type": "object", "description": "Map of document name to URL" },
+        "displayId": { "type": "string", "description": "Human-readable application ID" },
+        "password": { "type": "string", "description": "6-digit access password" },
+        "adminNote": { "type": "string", "description": "Notes from the recruitment team" },
         "submittedAt": { "type": "string", "format": "date-time", "description": "When the application was submitted" },
-        "status": { "type": "string", "enum": ["pending", "reviewed", "shortlisted", "rejected"], "description": "Application status" }
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the application was last updated" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Application status" }
       },
-      "required": ["fullName", "email", "phone", "position", "experience", "agree"]
+      "required": ["fullName", "email", "phone", "position", "experience", "displayId", "password"]
     }
   },
   "firestore": {
