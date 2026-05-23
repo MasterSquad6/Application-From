@@ -65,16 +65,21 @@ async function startServer() {
 
       const authHeader = 'Basic ' + Buffer.from(privateKey + ':').toString('base64');
       
-      const cleanFileName = (fileName || file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
+      // Generate truly unique filename
+      const uniqueId = Math.random().toString(36).substring(2, 8);
+      const timestamp = Date.now();
+      const cleanOriginalName = (fileName || file.originalname || 'upload').replace(/[^a-zA-Z0-9.-]/g, '_');
+      const finalFileName = `${timestamp}_${uniqueId}_${cleanOriginalName}`;
+
       const form = new FormData();
       
       // Use the raw buffer directly - this is the most robust way
       form.append('file', file.buffer, {
-        filename: cleanFileName,
+        filename: finalFileName,
         contentType: file.mimetype
       });
       
-      form.append('fileName', cleanFileName);
+      form.append('fileName', finalFileName);
       form.append('folder', folder);
       form.append('useUniqueFileName', 'true');
 

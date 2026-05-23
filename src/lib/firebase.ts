@@ -52,16 +52,20 @@ export async function uploadToImageKit(file: File, onProgress?: (progress: numbe
       console.log(`[Upload] Server response (${xhr.status}):`, result);
 
       if (xhr.status >= 200 && xhr.status < 300) {
+        // If the server returns success: false in a 200 OK
         if (result.success === false) {
           console.error('[Upload] Server reported failure:', result);
           reject(new Error(result.message || result.error || 'Upload failed'));
         } else if (result.url) {
+          // Priority 1: Direct URL from my proxy/ImageKit
           console.log(`[Upload] Successful: ${result.url}`);
           resolve(result.url);
+        } else if (result.data && result.data.url) {
+          // Priority 2: Nested data.url format
+          resolve(result.data.url);
         } else {
-          // Handle direct ImageKit response if proxy returns it directly
-          if (result.url) resolve(result.url);
-          else reject(new Error('Upload failed: No URL returned by server.'));
+          console.error('[Upload] No URL found in response:', result);
+          reject(new Error('Upload failed: No URL returned by server.'));
         }
       } else {
         const detailedError = result.message || result.error || xhr.statusText || 'Unknown error';

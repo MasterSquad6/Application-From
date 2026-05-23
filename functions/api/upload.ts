@@ -24,12 +24,16 @@ export const onRequestPost: PagesFunction<{ IMAGEKIT_PRIVATE_KEY: string }> = as
 
     console.log('[Upload Function] Processing:', { name: file.name, type: file.type, size: file.size });
 
-    const cleanFileName = (fileName || file.name || 'upload_' + Date.now()).replace(/[^a-zA-Z0-9.-]/g, '_');
+    // Generate a truly unique filename with random string and timestamp
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+    const timestamp = Date.now();
+    const cleanFileName = (fileName || file.name || 'upload').replace(/[^a-zA-Z0-9.-]/g, '_');
+    const finalFileName = `${timestamp}_${uniqueId}_${cleanFileName}`;
 
     // Create a new FormData for ImageKit
     const ikFormData = new FormData();
     ikFormData.append('file', file);
-    ikFormData.append('fileName', cleanFileName);
+    ikFormData.append('fileName', finalFileName);
     ikFormData.append('folder', folder);
     ikFormData.append('useUniqueFileName', 'true');
 
