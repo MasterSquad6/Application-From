@@ -33,6 +33,15 @@
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Application status" }
       },
       "required": ["fullName", "email", "phone", "position", "experience", "displayId", "password"]
+    },
+    "stats": {
+      "selection": "stats",
+      "description": "Global application and vacancy statistics",
+      "properties": {
+        "cs_admin_vacancies": { "type": "number", "description": "Total available slots for CS Admin" },
+        "va_vacancies": { "type": "number", "description": "Total available slots for VA" },
+        "hired_count": { "type": "number", "description": "Total number of people hired" }
+      }
     }
   },
   "firestore": {

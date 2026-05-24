@@ -30,10 +30,17 @@ import {
   Lock,
   History,
   FileSearch,
-  MessageCircle
+  MessageCircle,
+  Camera
 } from 'lucide-react';
-import { submitApplication, uploadToImageKit, getApplicationByDisplayId, updateApplicationStatus } from './lib/firebase';
-import DebugConsole from './components/DebugConsole';
+import { 
+  submitApplication, 
+  uploadToImageKit, 
+  getApplicationByDisplayId, 
+  updateApplicationStatus,
+  getStats,
+  getRecentApplications
+} from './lib/firebase';
 
 // --- Types ---
 
@@ -163,22 +170,24 @@ const Navbar = ({ onApply, onHistory }: { onApply: () => void, onHistory: () => 
   </motion.nav>
 );
 
-const Hero = ({ onApply, onSearch, searchError, searchLoading }: { 
+const Hero = ({ onApply, onSearch, searchError, searchLoading, recentApplicants, stats }: { 
   onApply: () => void, 
   onSearch: (id: string, pass: string) => void,
   searchError: string | null,
-  searchLoading: boolean
+  searchLoading: boolean,
+  recentApplicants: any[],
+  stats: { cs_admin_vacancies: number, va_vacancies: number, hired_count: number } | null
 }) => {
-  const [applicants, setApplicants] = React.useState<{n:string, t:string, p:string, i:string}[]>([
+  const [simulatedApplicants, setSimulatedApplicants] = useState<{n:string, t:string, p:string, i:string}[]>([
     { n: 'রাকিব আহমেদ', t: '৩ মিনিট আগে', p: 'CS অ্যাডমিন', i: 'R' },
     { n: 'ফাতেমা আক্তার', t: '১২ মিনিট আগে', p: 'VA', i: 'F' },
     { n: 'নাসির হোসেন', t: '২৫ মিনিট আগে', p: 'CS অ্যাডমিন', i: 'N' },
   ]);
-  
+
   const [sId, setSId] = useState('');
   const [sPass, setSPass] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const names = [
       'রাকিব আহমেদ', 'ফাতেমা আক্তার', 'নাসির হোসেন', 'আহনাফ শাহরিয়ার', 'সাদিয়া ইসলাম', 
       'তানজিমুল হক', 'নুসরাত জাহান', 'রাইয়ান আহমেদ', 'সাবরিনা চৌধুরী', 'ইশতিয়াক আহমেদ', 
@@ -187,14 +196,33 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading }: {
     ];
     const positions = ['CS অ্যাডমিন', 'VA'];
     
+    // Rotate simulated names every 45 minutes (simulated)
     const interval = setInterval(() => {
       const randomName = names[Math.floor(Math.random() * names.length)];
       const randomPos = positions[Math.floor(Math.random() * positions.length)];
-      setApplicants(prev => [{ n: randomName, t: 'এইমাত্র', p: randomPos, i: randomName.charAt(0) }, ...prev.slice(0, 2)]);
+      setSimulatedApplicants(prev => [{ n: randomName, t: 'এইমাত্র', p: randomPos, i: randomName.charAt(0) }, ...prev.slice(0, 2)]);
     }, 2700000); 
 
     return () => clearInterval(interval);
   }, []);
+
+  // Merge real firestore applicants with simulated ones
+  const displayedApplicants = [
+    ...recentApplicants
+      .filter(app => app.fullName || app.name || app.displayName) // Only show real ones if they have some name data
+      .map(app => {
+        const name = app.fullName || app.name || app.displayName || 'আবেদনকারী';
+        return {
+          n: name,
+          t: app.submittedAt?.toDate ? app.submittedAt.toDate().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }) : 'এই মাত্র',
+          p: app.position === 'cs_admin' ? 'CS অ্যাডমিন' : 'VA',
+          i: name.trim().charAt(0) || '?',
+          isReal: true,
+          id: app.id
+        };
+      }),
+    ...simulatedApplicants.map((app, idx) => ({ ...app, isReal: false, id: `sim-${idx}` }))
+  ].slice(0, 3); // Keep only top 3
 
   return (
     <section className="relative px-6 py-12 lg:py-32 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-16 items-center overflow-hidden">
@@ -294,17 +322,28 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading }: {
           <div className="flex items-center justify-between mb-8 lg:mb-10">
             <div>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">উপলব্ধ শূন্যপদ (Current Stock)</p>
-              <h3 className="text-3xl sm:text-5xl font-display font-extrabold text-brand-deep">১৫</h3>
+              <h3 className="text-3xl sm:text-5xl font-display font-extrabold text-brand-deep">
+                {(stats?.cs_admin_vacancies || 0) + (stats?.va_vacancies || 0)}
+              </h3>
             </div>
+            {stats && stats.hired_count > 0 && (
+              <div className="text-right">
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">নিয়োগপ্রাপ্ত</p>
+                <div className="flex items-center gap-1 justify-end">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                  <span className="text-sm font-bold text-brand-deep">{stats.hired_count} জন</span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10">
             <div className="p-5 rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/20">
-              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">০৫</h4>
+              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">{stats?.cs_admin_vacancies || 0}</h4>
               <p className="text-[10px] opacity-70 uppercase font-black tracking-wider">CS অ্যাডমিন</p>
             </div>
             <div className="p-5 rounded-3xl bg-emerald-600 text-white shadow-xl shadow-emerald-500/20">
-              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">১০</h4>
+              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">{stats?.va_vacancies || 0}</h4>
               <p className="text-[10px] opacity-70 uppercase font-black tracking-wider">ভার্চুয়াল অ্যাসিস্ট্যান্ট</p>
             </div>
           </div>
@@ -312,9 +351,9 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading }: {
           <div className="space-y-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">সাম্প্রতিক আবেদনসমূহ</p>
             <AnimatePresence mode="popLayout">
-              {applicants.length > 0 ? applicants.map((app, i) => (
+              {displayedApplicants.length > 0 ? displayedApplicants.map((app) => (
                 <motion.div 
-                  key={app.n + i}
+                  key={app.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
@@ -519,12 +558,30 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
+  // Global Data
+  const [stats, setStats] = useState<{ cs_admin_vacancies: number, va_vacancies: number, hired_count: number } | null>(null);
+  const [recentApplicants, setRecentApplicants] = useState<any[]>([]);
+
   // Admin View States
   const [adminNote, setAdminNote] = useState('');
   const [adminStatus, setAdminStatus] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    const fetchGlobalData = async () => {
+      try {
+        const [s, r] = await Promise.all([getStats(), getRecentApplications(10)]);
+        setStats(s);
+        setRecentApplicants(r);
+      } catch (err) {
+        console.error('Error fetching global stats:', err);
+      }
+    };
+
+    if (view === 'home') {
+      fetchGlobalData();
+    }
   }, [view, step]);
 
   const updateField = (field: keyof ApplicationData, value: any) => {
@@ -557,6 +614,25 @@ export default function App() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (step < 4) return;
+    
+    // Basic Validation
+    if (!formData.fullName || formData.fullName.length < 3) {
+      alert('দয়া করে আপনার পুরো নাম সঠিকভাবে লিখুন।');
+      setStep(1);
+      return;
+    }
+
+    if (!formData.phone || formData.phone.length < 10) {
+      alert('দয়া করে সঠিক মোবাইল নম্বর প্রদান করুন।');
+      setStep(1);
+      return;
+    }
+
+    if (!formData.position) {
+      alert('দয়া করে পদের নাম নির্বাচন করুন।');
+      setStep(2);
+      return;
+    }
     
     // Check if at least one file is uploaded
     if (Object.keys(formData.imageUrls).length === 0) {
@@ -675,6 +751,8 @@ export default function App() {
           }}
           searchError={searchError}
           searchLoading={searchLoading}
+          recentApplicants={recentApplicants}
+          stats={stats}
         />
 
         {/* Search History Quick Entry (Mobile) */}
@@ -858,7 +936,6 @@ export default function App() {
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 px-6 overflow-y-auto">
-      <DebugConsole />
       <div className="max-w-3xl mx-auto">
         <button 
           onClick={handleBack}

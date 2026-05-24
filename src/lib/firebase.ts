@@ -202,6 +202,46 @@ export async function getApplicationByDisplayId(displayId: string, password?: st
   }
 }
 
+/**
+ * Global Stats & Recent Applicants
+ */
+
+export async function getStats() {
+  const { doc, getDoc } = await import('firebase/firestore');
+  const docRef = doc(db, 'stats', 'vacancies');
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    return docSnap.data() as {
+      cs_admin_vacancies: number;
+      va_vacancies: number;
+      hired_count: number;
+    };
+  } else {
+    // Default fallback
+    return {
+      cs_admin_vacancies: 5,
+      va_vacancies: 10,
+      hired_count: 0
+    };
+  }
+}
+
+export async function getRecentApplications(limitCount: number = 3) {
+  const { query, collection, orderBy, limit, getDocs } = await import('firebase/firestore');
+  const q = query(
+    collection(db, 'applications'),
+    orderBy('submittedAt', 'desc'),
+    limit(limitCount)
+  );
+  
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as any[];
+}
+
 export async function updateApplicationStatus(docId: string, status: string, note: string) {
   const path = 'applications';
   try {
