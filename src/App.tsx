@@ -133,6 +133,103 @@ const BRANDS = [
 
 // --- Components ---
 
+const SubmittedScreen: React.FC<{ 
+  submissionResult: {displayId: string, password: string} | null,
+  onBackHome: () => void,
+  onCopy: (text: string, field: string) => void,
+  copiedField: string | null
+}> = ({ submissionResult, onBackHome, onCopy, copiedField }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="bg-white rounded-[40px] shadow-premium p-10 lg:p-16 text-center border border-slate-50"
+  >
+    <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-8 border-4 border-white shadow-xl">
+      <CheckCircle2 className="w-10 h-10" />
+    </div>
+    <h2 className="font-display text-3xl font-extrabold text-brand-deep mb-4 tracking-tight leading-tight">আবেদন সফলভাবে গ্রহণ করা হয়েছে!</h2>
+    <p className="text-slate-500 text-sm lg:text-base mb-10 max-w-lg mx-auto leading-relaxed">
+      ধন্যবাদ! আপনার আবেদনটি আমাদের সার্ভারে জমা হয়েছে। আমাদের <span className="font-bold text-brand-blue">HR রিক্রুটমেন্ট টিম</span> আপনার অভিজ্ঞতা এবং তথ্যাদি গুরুত্ব সহকারে পর্যালোচনা করবে। সাধারণত ৩-৫ কার্যদিবসের মধ্যে পরবর্তী ধাপ সম্পর্কে জানানো হয়।
+    </p>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div 
+        onClick={() => onCopy(submissionResult?.displayId || '', 'id')}
+        className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-blue/30 transition-all cursor-pointer relative overflow-hidden"
+      >
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {copiedField === 'id' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+        </div>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">আবেদন আইডি (Application ID)</span>
+        <span className="font-mono font-bold text-brand-blue text-2xl tracking-tighter">
+          {submissionResult?.displayId || 'SV-XXX-XXX'}
+        </span>
+        {copiedField === 'id' && (
+          <motion.span 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
+          >
+            কপি করা হয়েছে (Copied)
+          </motion.span>
+        )}
+      </div>
+      <div 
+        onClick={() => onCopy(submissionResult?.password || '', 'pass')}
+        className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-glow/30 transition-all cursor-pointer relative overflow-hidden"
+      >
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {copiedField === 'pass' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+        </div>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">সিকিউরিটি পাসওয়ার্ড (Password)</span>
+        <span className="font-mono font-bold text-brand-glow text-2xl tracking-[0.2em] bg-brand-deep px-6 py-2 rounded-xl">
+          {submissionResult?.password || 'XXXXXX'}
+        </span>
+        {copiedField === 'pass' && (
+          <motion.span 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
+          >
+            কপি করা হয়েছে (Copied)
+          </motion.span>
+        )}
+      </div>
+    </div>
+
+    <div className="p-6 rounded-3xl bg-linear-to-br from-amber-50 to-orange-50 border border-amber-100 flex gap-4 text-left mb-10 shadow-sm">
+      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+        <Lock className="w-6 h-6 text-amber-500" />
+      </div>
+      <div>
+        <h4 className="text-sm font-black text-amber-900 mb-1">পাসওয়ার্ডটি অবশ্যই সংরক্ষণ করুন!</h4>
+        <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+          আপনার আবেদনের অবস্থা (Pending, Approved, বা Rejected) জানতে এই আইডি এবং পাসওয়ার্ডটি অত্যন্ত জরুরি। হোমপেজের <span className="underline font-bold">"হিস্টোরি"</span> সেকশনে গিয়ে আপনি যেকোনো সময় আপনার আবেদনের বর্তমান আপডেট দেখতে পারবেন।
+        </p>
+      </div>
+    </div>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+      <button 
+        onClick={() => {
+          const text = `ShopVerse Application Details:\nID: ${submissionResult?.displayId}\nPassword: ${submissionResult?.password}`;
+          onCopy(text, 'all');
+        }}
+        className="flex-1 bg-white border-2 border-brand-blue text-brand-blue px-10 py-5 rounded-2xl font-display font-black tracking-tight hover:bg-brand-blue/5 transition-all active:scale-95 flex items-center justify-center gap-2"
+      >
+        {copiedField === 'all' ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+        সব তথ্য কপি করুন
+      </button>
+      <button 
+        onClick={onBackHome}
+        className="flex-1 bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-black tracking-tight hover:bg-brand-blue transition-all active:scale-95 shadow-xl shadow-brand-deep/20"
+      >
+        হোমে ফিরে যান
+      </button>
+    </div>
+  </motion.div>
+);
+
 const Brand: React.FC<{ logo: string, name: string, color?: string }> = ({ logo, name, color }) => (
     <div className="flex items-center gap-2 md:gap-4 px-4 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl bg-white/50 border border-slate-100/50 backdrop-blur-sm grayscale opacity-40 hover:grayscale-0 hover:opacity-100 hover:border-brand-blue/20 hover:bg-white transition-all duration-500 cursor-default group shrink-0">
     <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-sm border border-slate-50 transition-transform group-hover:scale-110 ${color || 'bg-slate-50'}`}>
@@ -307,6 +404,7 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading, recentApplicants,
       </motion.div>
 
       <motion.div
+        id="search-section"
         initial={{ opacity: 0, scale: 0.9, x: 50 }}
         whileInView={{ opacity: 1, scale: 1, x: 0 }}
         viewport={{ once: true }}
@@ -433,7 +531,7 @@ const TrustSection = () => (
           </p>
           <div className="grid sm:grid-cols-2 gap-6">
             {[
-              { t: 'কোণ ফ্রি নেই', d: '১০০% ফ্রি আবেদন প্রক্রিয়া' },
+              { t: 'কোন ফি নেই', d: '১০০% ফ্রি আবেদন প্রক্রিয়া' },
               { t: 'তথ্য সুরক্ষা', d: 'আপনার তথ্য আমাদের কাছে নিরাপদ' },
               { t: 'দ্রুত রেসপন্স', d: '৭২ ঘণ্টার মধ্যে আবেদনের ফলাফল' },
               { t: 'সরাসরি ইন্টারভিউ', d: 'যোগ্যদের জন্য সরাসরি ডাক' }
@@ -1384,7 +1482,7 @@ export default function App() {
 
         <ProcessSection />
 
-        <section id="search-section" className="px-6 py-10 bg-slate-50 relative overflow-hidden">
+        <section className="px-6 py-10 bg-slate-50 relative overflow-hidden">
           <div className="max-w-7xl mx-auto flex flex-col items-center">
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-10">Trusted Operations for Global Brands</p>
             <div className="flex flex-wrap justify-center gap-4 lg:gap-8 opacity-40">
@@ -1852,85 +1950,12 @@ export default function App() {
             </form>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[40px] shadow-premium p-10 lg:p-16 text-center border border-slate-50"
-          >
-            <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-8 border-4 border-white shadow-xl">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <h2 className="font-display text-3xl font-extrabold text-brand-deep mb-4 tracking-tight leading-tight">আবেদন সফলভাবে গ্রহণ করা হয়েছে!</h2>
-            <p className="text-slate-500 text-sm lg:text-base mb-10 max-w-lg mx-auto leading-relaxed">
-              ধন্যবাদ! আপনার আবেদনটি আমাদের সার্ভারে জমা হয়েছে। আমাদের <span className="font-bold text-brand-blue">HR রিক্রুটমেন্ট টিম</span> আপনার অভিজ্ঞতা এবং তথ্যাদি গুরুত্ব সহকারে পর্যালোচনা করবে। সাধারণত ৩-৫ কার্যদিবসের মধ্যে পরবর্তী ধাপ সম্পর্কে জানানো হয়।
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div 
-                onClick={() => handleCopy(submissionResult?.displayId || '', 'id')}
-                className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-blue/30 transition-all cursor-pointer relative overflow-hidden"
-              >
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {copiedField === 'id' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">আবেদন আইডি (Application ID)</span>
-                <span className="font-mono font-bold text-brand-blue text-2xl tracking-tighter">
-                  {submissionResult?.displayId || 'SV-XXX-XXX'}
-                </span>
-                {copiedField === 'id' && (
-                  <motion.span 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
-                  >
-                    কপি করা হয়েছে (Copied)
-                  </motion.span>
-                )}
-              </div>
-              <div 
-                onClick={() => handleCopy(submissionResult?.password || '', 'pass')}
-                className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-glow/30 transition-all cursor-pointer relative overflow-hidden"
-              >
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {copiedField === 'pass' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">সিকিউরিটি পাসওয়ার্ড (Password)</span>
-                <span className="font-mono font-bold text-brand-glow text-2xl tracking-[0.2em] bg-brand-deep px-6 py-2 rounded-xl">
-                  {submissionResult?.password || 'XXXXXX'}
-                </span>
-                {copiedField === 'pass' && (
-                  <motion.span 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
-                  >
-                    কপি করা হয়েছে (Copied)
-                  </motion.span>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-linear-to-br from-amber-50 to-orange-50 border border-amber-100 flex gap-4 text-left mb-10 shadow-sm">
-              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                <Lock className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-amber-900 mb-1">পাসওয়ার্ডটি অবশ্যই সংরক্ষণ করুন!</h4>
-                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
-                  আপনার আবেদনের অবস্থা (Pending, Approved, বা Rejected) জানতে এই আইডি এবং পাসওয়ার্ডটি অত্যন্ত জরুরি। হোমপেজের <span className="underline">"হিস্টোরি"</span> সেকশনে গিয়ে আপনি যেকোনো সময় আপনার আবেদনের বর্তমান আপডেট দেখতে পারবেন।
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button 
-                onClick={() => { resetForm(); setView('home'); }}
-                className="flex-1 bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-black tracking-tight hover:bg-brand-blue transition-all active:scale-95 shadow-xl shadow-brand-deep/20"
-              >
-                হোমে ফিরে যান
-              </button>
-            </div>
-          </motion.div>
+          <SubmittedScreen 
+            submissionResult={submissionResult}
+            onBackHome={() => { resetForm(); setView('home'); }}
+            onCopy={handleCopy}
+            copiedField={copiedField}
+          />
         )}
       </div>
 
