@@ -257,3 +257,20 @@ export async function updateApplicationStatus(docId: string, status: string, not
     handleFirestoreError(error, OperationType.UPDATE, `${path}/${docId}`);
   }
 }
+
+export async function updateStats(csVac: number, vaVac: number, hired: number) {
+  const path = 'stats';
+  try {
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const docRef = doc(db, path, 'vacancies');
+    await setDoc(docRef, {
+      cs_admin_vacancies: csVac,
+      va_vacancies: vaVac,
+      hired_count: hired,
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${path}/vacancies`);
+  }
+}

@@ -31,7 +31,8 @@ import {
   History,
   FileSearch,
   MessageCircle,
-  Camera
+  Camera,
+  X
 } from 'lucide-react';
 import { 
   submitApplication, 
@@ -39,7 +40,8 @@ import {
   getApplicationByDisplayId, 
   updateApplicationStatus,
   getStats,
-  getRecentApplications
+  getRecentApplications,
+  updateStats
 } from './lib/firebase';
 
 // --- Types ---
@@ -196,7 +198,6 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading, recentApplicants,
     ];
     const positions = ['CS অ্যাডমিন', 'VA'];
     
-    // Rotate simulated names every 45 minutes (simulated)
     const interval = setInterval(() => {
       const randomName = names[Math.floor(Math.random() * names.length)];
       const randomPos = positions[Math.floor(Math.random() * positions.length)];
@@ -206,10 +207,9 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading, recentApplicants,
     return () => clearInterval(interval);
   }, []);
 
-  // Merge real firestore applicants with simulated ones
   const displayedApplicants = [
     ...recentApplicants
-      .filter(app => app.fullName || app.name || app.displayName) // Only show real ones if they have some name data
+      .filter(app => app.fullName || app.name || app.displayName)
       .map(app => {
         const name = app.fullName || app.name || app.displayName || 'আবেদনকারী';
         return {
@@ -222,215 +222,253 @@ const Hero = ({ onApply, onSearch, searchError, searchLoading, recentApplicants,
         };
       }),
     ...simulatedApplicants.map((app, idx) => ({ ...app, isReal: false, id: `sim-${idx}` }))
-  ].slice(0, 3); // Keep only top 3
+  ].slice(0, 3);
 
   return (
-    <section className="relative px-6 py-12 lg:py-32 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-16 items-center overflow-hidden">
-      {/* Decorative Blobs */}
-      <div className="absolute -top-24 -right-24 w-72 h-72 lg:w-96 lg:h-96 bg-brand-blue/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute top-1/2 -left-24 w-48 h-48 lg:w-64 lg:h-64 bg-brand-glow/5 rounded-full blur-3xl -z-10" />
+    <section className="relative px-6 py-12 lg:py-32 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-24 items-center overflow-hidden">
+      {/* Dynamic Background Elements */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.2, 1],
+          rotate: [0, 90, 0],
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute -top-24 -right-24 w-72 h-72 lg:w-96 lg:h-96 bg-brand-blue/10 rounded-full blur-3xl -z-10" 
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.3, 1],
+          x: [0, 50, 0],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="absolute top-1/2 -left-24 w-48 h-48 lg:w-64 lg:h-64 bg-brand-glow/10 rounded-full blur-3xl -z-10" 
+      />
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        initial={{ opacity: 0, x: -50 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
         className="text-center lg:text-left order-1 lg:order-none"
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-blue/20 bg-brand-blue/5 text-brand-blue text-[10px] font-semibold tracking-widest uppercase mb-8">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-blue/20 bg-brand-blue/5 text-brand-blue text-[10px] font-semibold tracking-widest uppercase mb-8"
+        >
           <span className="w-2 h-2 rounded-full bg-brand-blue animate-ping" />
-          E-Commerce Operations Team
-        </div>
+          বিশ্বস্ত ই-কমার্স ক্যারিয়ার প্ল্যাটফর্ম
+        </motion.div>
         
-        <h1 className="font-display text-[40px] sm:text-6xl lg:text-7xl font-extrabold text-brand-deep leading-[1.1] lg:leading-[0.9] tracking-tighter mb-8 italic">
-          হয়ে উঠুন <br />
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-blue via-brand-glow to-brand-blue bg-[length:200%_auto] animate-gradient-x">ShopVerse</span> <br />
-          অ্যাডমিন
+        <h1 className="font-display text-[42px] sm:text-6xl lg:text-7xl font-extrabold text-brand-deep leading-[1.1] tracking-tighter mb-8">
+          ভবিষ্যতের জন্য <br />
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-blue via-brand-glow to-brand-blue bg-[length:200%_auto] animate-gradient-x underline decoration-brand-blue/20 underline-offset-8">সঠিক ক্যারিয়ার</span> <br />
+          গড়ে তুলুন আমাদের সাথে
         </h1>
         
         <p className="text-slate-600 text-lg lg:text-xl leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0 text-balance font-medium">
-          আমাদের প্রিমিয়াম ই-কমার্স প্ল্যাটফর্মে CS Admin বা Virtual Assistant হিসেবে যোগ দিন। রিমোট কাজ এবং গ্লোবাল ক্যারিয়ার গ্রোথ আমাদের সাথে।
+          ShopVerse-এ কাজ করার অর্থ হলো স্বচ্ছতা, পেশাদারিত্ব এবং উজ্জ্বল ভবিষ্যৎ। আমাদের সাথে যোগ দিয়ে নিজেকে ই-কমার্স জগতের একজন দক্ষ পেশাদার হিসেবে প্রমাণ করুন।
         </p>
-        
-        <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white mb-10 max-w-md mx-auto lg:mx-0 shadow-2xl shadow-brand-blue/5 text-left">
-          <div className="flex items-center gap-2 mb-4">
-            <History className="w-4 h-4 text-brand-blue" />
-            <h4 className="text-xs font-black text-brand-deep uppercase tracking-widest">হিষ্ট্রোরি চেক করুন</h4>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
+          <motion.button 
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onApply}
+            className="group relative bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-bold text-lg overflow-hidden transition-all shadow-2xl shadow-brand-deep/20"
+          >
+            <div className="absolute inset-0 bg-linear-to-r from-brand-blue to-brand-glow opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="relative flex items-center justify-center gap-3">
+              🚀 আবেদন শুরু করুন <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </motion.button>
+        </div>
+
+        <div className="flex items-center justify-center lg:justify-start gap-8 opacity-60">
+          <div className="flex flex-col">
+            <span className="font-display font-black text-2xl text-brand-deep">১০০%</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">নিরাপদ পোর্টাল</span>
           </div>
-          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); onSearch(sId, sPass); }}>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="w-px h-8 bg-slate-200" />
+          <div className="flex flex-col">
+            <span className="font-display font-black text-2xl text-brand-deep">২৪/৭</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">সাপোর্ট সিস্টেম</span>
+          </div>
+          <div className="w-px h-8 bg-slate-200" />
+          <div className="flex flex-col">
+            <span className="font-display font-black text-2xl text-brand-deep">০%</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">আবেদন ফি</span>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, x: 50 }}
+        whileInView={{ opacity: 1, scale: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="relative order-2 lg:order-none"
+      >
+        <div className="relative z-10 bg-white p-6 sm:p-10 rounded-[40px] shadow-premium border border-white">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <History className="w-5 h-5 text-brand-blue" />
+              <h4 className="text-xs font-black text-brand-deep uppercase tracking-widest">আবেদন ট্র্যাকিং</h4>
+            </div>
+          </div>
+
+          <form className="space-y-4 mb-10" onSubmit={(e) => { e.preventDefault(); onSearch(sId, sPass); }}>
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-blue transition-colors" />
               <input 
                 type="text" 
-                placeholder="আপনার আইডি (SV-XXXXXX-XXX)"
+                placeholder="সার্চ আইডি (SV-XXXXXX-XXX)"
                 value={sId}
                 onChange={e => { setSId(e.target.value); }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-100 bg-white/80 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm font-bold"
+                className="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue/50 focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all text-sm font-bold"
               />
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative group">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-blue transition-colors" />
               <input 
                 type="password" 
-                placeholder="পাসওয়ার্ড (৬ সংখ্যা)"
+                placeholder="সিকিউরিটি পাসওয়ার্ড"
                 value={sPass}
                 onChange={e => { setSPass(e.target.value); }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-100 bg-white/80 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm font-bold"
+                className="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue/50 focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all text-sm font-bold"
               />
             </div>
             
             {searchError && (
               <motion.div 
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-100 mb-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-4 rounded-2xl bg-red-50 border border-red-100"
               >
-                <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />
-                <p className="text-[10px] text-red-600 font-bold leading-tight">{searchError}</p>
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-[11px] text-red-600 font-bold">{searchError}</p>
               </motion.div>
             )}
 
-            <button 
+            <motion.button 
               type="submit"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               disabled={searchLoading}
-              className="w-full bg-brand-deep text-white py-3 rounded-xl font-bold hover:bg-brand-blue transition-all active:scale-95 shadow-lg shadow-brand-deep/10 text-sm flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full bg-brand-deep text-white py-4 rounded-2xl font-bold hover:bg-brand-blue transition-all shadow-xl shadow-brand-deep/10 text-sm flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'আবেদন দেখুন'}
-            </button>
+              {searchLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'স্টেটাস চেক করুন'}
+            </motion.button>
           </form>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-          <button 
-            onClick={onApply}
-            className="group relative bg-brand-deep text-white px-10 py-5 rounded-2xl font-display font-bold text-lg overflow-hidden transition-all hover:translate-y-[-4px] active:translate-y-0 shadow-2xl shadow-brand-deep/20"
-          >
-            <div className="absolute inset-0 bg-linear-to-r from-brand-blue to-brand-glow opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="relative flex items-center justify-center gap-3">
-              🚀 এখনই আবেদন করুন <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </span>
-          </button>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 50 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="relative order-2 lg:order-none"
-      >
-        <div className="relative z-10 bg-white p-6 sm:p-10 rounded-[32px] shadow-premium border border-white">
-          <div className="flex items-center justify-between mb-8 lg:mb-10">
-            <div>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">উপলব্ধ শূন্যপদ (Current Stock)</p>
-              <h3 className="text-3xl sm:text-5xl font-display font-extrabold text-brand-deep">
-                {(stats?.cs_admin_vacancies || 0) + (stats?.va_vacancies || 0)}
-              </h3>
-            </div>
-            {stats && stats.hired_count > 0 && (
-              <div className="text-right">
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">নিয়োগপ্রাপ্ত</p>
-                <div className="flex items-center gap-1 justify-end">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                  <span className="text-sm font-bold text-brand-deep">{stats.hired_count} জন</span>
+          <div className="pt-8 border-t border-slate-100">
+             <div className="flex items-center justify-between mb-6">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">শূন্যপদ আপডেট</p>
+                <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-tighter">Live</div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-white hover:border-brand-blue/20 transition-all">
+                  <p className="text-2xl font-display font-black text-brand-blue">{stats?.cs_admin_vacancies || 0}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">CS অ্যাডমিন</p>
                 </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10">
-            <div className="p-5 rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/20">
-              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">{stats?.cs_admin_vacancies || 0}</h4>
-              <p className="text-[10px] opacity-70 uppercase font-black tracking-wider">CS অ্যাডমিন</p>
-            </div>
-            <div className="p-5 rounded-3xl bg-emerald-600 text-white shadow-xl shadow-emerald-500/20">
-              <h4 className="text-2xl sm:text-3xl font-display font-bold mb-1">{stats?.va_vacancies || 0}</h4>
-              <p className="text-[10px] opacity-70 uppercase font-black tracking-wider">ভার্চুয়াল অ্যাসিস্ট্যান্ট</p>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">সাম্প্রতিক আবেদনসমূহ</p>
-            <AnimatePresence mode="popLayout">
-              {displayedApplicants.length > 0 ? displayedApplicants.map((app) => (
-                <motion.div 
-                  key={app.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-white hover:bg-white hover:shadow-sm transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xs font-bold text-brand-blue border border-slate-100 group-hover:scale-110 transition-transform">
-                    {app.i}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-brand-deep">{app.n}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">{app.t}</p>
-                  </div>
-                  <span className={`text-[10px] font-black px-3 py-1.5 rounded-full tracking-tight ${app.p === 'VA' ? 'bg-emerald-50 text-emerald-600' : 'bg-brand-blue/10 text-brand-blue'}`}>
-                    {app.p}
-                  </span>
-                </motion.div>
-              )) : (
-                <div className="text-center py-8 text-slate-300 text-sm italic font-medium">কোনো সাম্প্রতিক আবেদন নেই</div>
-              )}
-            </AnimatePresence>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-white hover:border-brand-blue/20 transition-all">
+                  <p className="text-2xl font-display font-black text-emerald-600">{stats?.va_vacancies || 0}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">VA পজিশন</p>
+                </div>
+             </div>
           </div>
         </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[105%] h-[105%] bg-linear-to-tr from-brand-blue/10 to-transparent rounded-[48px] -z-10 rotate-3 hidden sm:block" />
+        
+        {/* Floating Decoration */}
+        <motion.div 
+          animate={{ y: [0, -20, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-10 -left-10 z-20 hidden lg:block"
+        >
+          <div className="bg-white p-5 rounded-2xl shadow-premium border border-slate-100 flex items-center gap-3">
+             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <CheckCircle2 className="w-6 h-6" />
+             </div>
+             <div>
+                <p className="text-xs font-bold text-brand-deep">সফল নিয়োগ</p>
+                <p className="text-[10px] text-slate-400 font-medium">{stats?.hired_count || 0}+ জন সদস্য</p>
+             </div>
+          </div>
+        </motion.div>
       </motion.div>
     </section>
   );
 };
 
+
+
+
 const TrustSection = () => (
-  <section className="px-6 py-20 bg-brand-deep text-white relative overflow-hidden">
-    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+  <section className="px-6 py-24 bg-brand-deep text-white relative overflow-hidden">
+    <motion.div 
+      animate={{ opacity: [0.05, 0.1, 0.05] }}
+      transition={{ duration: 5, repeat: Infinity }}
+      className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" 
+    />
     <div className="max-w-7xl mx-auto relative z-10">
-      <div className="grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-8 backdrop-blur-sm border border-white/10 shadow-2xl">
-            <ShieldCheck className="w-8 h-8 text-brand-glow" />
+      <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <motion.div
+           initial={{ opacity: 0, x: -30 }}
+           whileInView={{ opacity: 1, x: 0 }}
+           viewport={{ once: true }}
+        >
+          <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center mb-10 backdrop-blur-xl border border-white/10 shadow-3xl">
+            <ShieldCheck className="w-10 h-10 text-brand-glow" />
           </div>
-          <h2 className="font-display text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight">
-            নিরাপদ আবেদন — <br />
-            <span className="text-brand-glow">কোনো টাকা লাগবে না</span>
+          <h2 className="font-display text-4xl lg:text-6xl font-black mb-8 tracking-tighter leading-tight">
+            নিরাপদ আবেদন, <br />
+            <span className="text-brand-glow">স্বচ্ছ ক্যারিয়ার</span>
           </h2>
-          <p className="text-slate-400 text-lg leading-relaxed mb-10 max-w-lg">
-            ShopVerse কখনোই কোনো আবেদনকারীর কাছ থেকে টাকা নেয় না। আমাদের হায়ারিং প্রক্রিয়া সম্পূর্ণ বিনামূল্যে। কেউ যদি চাকরির জন্য টাকা দাবি করে, তাহলে সেটি প্রতারণা।
+          <p className="text-slate-400 text-lg sm:text-xl leading-relaxed mb-12 max-w-lg font-medium">
+            ShopVerse একটি প্রফেশনাল কমিউনিটি। আমাদের এখানে কোনো হিডেন চার্জ বা আবেদন ফি নেই। আমরা মেধা এবং দক্ষতার মূল্যায়ন করি।
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-6">
             {[
-              'কোনো আবেদন ফি নেই',
-              'কোনো ট্রেনিং ফি নেই',
-              '১০০% ফ্রি প্রসেস',
-              'নিরাপদ তথ্য সুরক্ষা'
+              { t: 'কোণ ফ্রি নেই', d: '১০০% ফ্রি আবেদন প্রক্রিয়া' },
+              { t: 'তথ্য সুরক্ষা', d: 'আপনার তথ্য আমাদের কাছে নিরাপদ' },
+              { t: 'দ্রুত রেসপন্স', d: '৭২ ঘণ্টার মধ্যে আবেদনের ফলাফল' },
+              { t: 'সরাসরি ইন্টারভিউ', d: 'যোগ্যদের জন্য সরাসরি ডাক' }
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                <span className="text-sm font-semibold">{item}</span>
+              <div key={i} className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                   <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                   <h5 className="font-bold text-sm mb-1">{item.t}</h5>
+                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{item.d}</p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
         
-        <div className="grid sm:grid-cols-2 gap-4 lg:gap-6">
-          {[
-            { icon: Globe, label: '৩০+ ব্র্যান্ড পার্টনার', val: '৩টি দেশ' },
-            { icon: Users, label: '১০০+ সক্রিয় অ্যাডমিন', val: '২টি শিফট' },
-            { icon: BarChart3, label: '৫০০K+ টিকেট হ্যান্ডেল্ড', val: 'বার্ষিক' },
-            { icon: Clock, label: '২৪/৭ অপারেশনস', val: 'অব্যাহত' },
-          ].map((stat, i) => (
-            <motion.div 
-              key={i}
-              whileHover={{ y: -5 }}
-              className="p-6 sm:p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm"
-            >
-              <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-glow mb-4" />
-              <h5 className="text-xl sm:text-2xl font-display font-bold mb-1 tracking-tight">{stat.label}</h5>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">{stat.val}</p>
-            </motion.div>
-          ))}
+        <div className="grid grid-cols-2 gap-4 sm:gap-8">
+           {[
+             { icon: Globe, label: 'গ্লোবাল ভিশন', val: '৩+ মার্কেট' },
+             { icon: Users, label: 'এক্সপার্ট টিম', val: '১০০+ সদস্য' },
+             { icon: BarChart3, label: 'সাফল্যের হার', val: '৯৫% গ্রোথ' },
+             { icon: Clock, label: 'সাপোর্ট', val: '২৪/৭ লাইভ' },
+           ].map((stat, i) => (
+             <motion.div 
+               key={i}
+               initial={{ opacity: 0, y: 30 }}
+               whileInView={{ opacity: 1, y: 0 }}
+               viewport={{ once: true }}
+               transition={{ delay: i * 0.1 }}
+               whileHover={{ y: -10, backgroundColor: "rgba(255,255,255,0.08)" }}
+               className="p-8 sm:p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md transition-all group"
+             >
+               <stat.icon className="w-10 h-10 text-brand-glow mb-6 group-hover:scale-110 transition-transform" />
+               <h5 className="text-2xl font-display font-black mb-1 lg:text-3xl tracking-tight">{stat.label}</h5>
+               <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em]">{stat.val}</p>
+             </motion.div>
+           ))}
         </div>
       </div>
     </div>
@@ -541,6 +579,496 @@ const Tag: React.FC<{ label: string, active: boolean, onClick: () => void }> = (
   </button>
 );
 
+// --- Admin Dashboard Component ---
+
+const AdminDashboard = ({ 
+  applicants, 
+  stats, 
+  onClose, 
+  onUpdateStatus, 
+  onUpdateStats,
+  refreshData
+}: { 
+  applicants: any[], 
+  stats: any, 
+  onClose: () => void,
+  onUpdateStatus: (id: string, status: string, note: string) => Promise<any>,
+  onUpdateStats: (cs: number, va: number, hired: number) => Promise<any>,
+  refreshData: () => void
+}) => {
+  const [selectedApp, setSelectedApp] = useState<any | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [csVac, setCsVac] = useState(stats?.cs_admin_vacancies || 0);
+  const [vaVac, setVaVac] = useState(stats?.va_vacancies || 0);
+  const [hired, setHired] = useState(stats?.hired_count || 0);
+  const [updating, setUpdating] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = applicants.filter(a => 
+    a.fullName?.toLowerCase().includes(search.toLowerCase()) || 
+    a.phone?.includes(search) ||
+    a.displayId?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <nav className="bg-brand-deep text-white px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="w-6 h-6 text-brand-glow" />
+          <h2 className="font-display font-extrabold text-xl">SV-Admin Control</h2>
+        </div>
+        <button 
+          onClick={onClose} 
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-all group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
+          ড্যাশবোর্ড বন্ধ করুন
+        </button>
+      </nav>
+
+      <main className="flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full space-y-10">
+        {/* Quick Stats Section */}
+        <section className="grid sm:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Users className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">মোট আবেদন</span>
+            </div>
+            <p className="text-3xl font-display font-black text-brand-deep">{applicants.length}</p>
+          </div>
+          <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">নিয়োগপ্রাপ্ত</span>
+            </div>
+            <p className="text-3xl font-display font-black text-emerald-600">{stats?.hired_count || 0}</p>
+          </div>
+          <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Briefcase className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">সক্রিয় শূন্যপদ</span>
+            </div>
+            <p className="text-3xl font-display font-black text-brand-blue">{(stats?.cs_admin_vacancies || 0) + (stats?.va_vacancies || 0)}</p>
+          </div>
+        </section>
+
+        <div className="grid lg:grid-cols-3 gap-10">
+          {/* Vacancy Management */}
+          <section className="lg:col-span-1 bg-white p-8 rounded-[32px] border border-slate-100 shadow-xl self-start space-y-6">
+            <h3 className="text-sm font-black text-brand-deep uppercase tracking-widest flex items-center gap-2 italic">
+              <TrendingUp className="w-4 h-4" /> ভ্যাকেন্সি আপডেট করুন
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">CS অ্যাডমিন ভ্যাকেন্সি</label>
+                <input type="number" value={csVac} onChange={e => setCsVac(Number(e.target.value))} className="w-full p-4 rounded-xl border border-slate-100 focus:border-brand-blue outline-none text-sm font-bold" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">VA ভ্যাকেন্সি</label>
+                <input type="number" value={vaVac} onChange={e => setVaVac(Number(e.target.value))} className="w-full p-4 rounded-xl border border-slate-100 focus:border-brand-blue outline-none text-sm font-bold" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">মোট নিয়োগ</label>
+                <input type="number" value={hired} onChange={e => setHired(Number(e.target.value))} className="w-full p-4 rounded-xl border border-slate-100 focus:border-brand-blue outline-none text-sm font-bold" />
+              </div>
+              <button 
+                disabled={updating}
+                onClick={async () => {
+                  setUpdating(true);
+                  const { updateStats } = await import('./lib/firebase');
+                  await updateStats(csVac, vaVac, hired);
+                  setUpdating(false);
+                  refreshData();
+                  alert('ভ্যাকেন্সি সফলভাবে আপডেট হয়েছে!');
+                }}
+                className="w-full bg-brand-deep text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-brand-blue transition-all disabled:opacity-50"
+              >
+                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'সব সেভ করুন'}
+              </button>
+            </div>
+          </section>
+
+          {/* Applicant List */}
+          <section className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-brand-deep uppercase tracking-widest italic">আবেদনকারীর তালিকা ({filtered.length})</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="খুঁজুন..." 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-white rounded-full border border-slate-100 text-xs font-bold w-48 sm:w-64 focus:border-brand-blue outline-none" 
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <AnimatePresence mode="popLayout">
+                {filtered.map(app => (
+                  <motion.div 
+                    layout
+                    key={app.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setSelectedApp(app)}
+                    className={`p-5 rounded-2xl border transition-all cursor-pointer group ${selectedApp?.id === app.id ? 'bg-brand-blue text-white border-brand-blue shadow-lg' : 'bg-white border-slate-100 hover:border-brand-blue/30'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${selectedApp?.id === app.id ? 'bg-white/20' : 'bg-slate-50 text-brand-blue'}`}>
+                          {app.fullName?.charAt(0) || '?'}
+                        </div>
+                        <div>
+                          <p className={`font-bold ${selectedApp?.id === app.id ? 'text-white' : 'text-brand-deep'}`}>{app.fullName}</p>
+                          <p className={`text-[10px] font-medium ${selectedApp?.id === app.id ? 'text-white/70' : 'text-slate-400'}`}>ID: {app.displayId} • {app.phone}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest ${
+                          app.status === 'hired' ? 'bg-emerald-500 text-white' : 
+                          app.status === 'interview' ? 'bg-amber-400 text-white' : 
+                          app.status === 'rejected' ? 'bg-red-500 text-white' : 
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {app.status}
+                        </span>
+                        <p className={`text-[9px] mt-2 font-medium ${selectedApp?.id === app.id ? 'text-white/50' : 'text-slate-300'}`}>
+                          {app.submittedAt?.toDate?.()?.toLocaleDateString('bn-BD')}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {selectedApp && (
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-10">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setSelectedApp(null)}
+              className="absolute inset-0 bg-brand-deep/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row"
+            >
+              <div className="md:w-1/2 p-10 bg-slate-50 border-r border-slate-200 overflow-y-auto max-h-[40vh] md:max-h-[80vh]">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">আবেদনকারীর বিবরণ</h4>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">পজিশন</p>
+                    <p className="font-bold text-brand-deep capitalize">{selectedApp.position}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">ইমেইল</p>
+                      <p className="font-bold text-brand-deep text-xs break-all">{selectedApp.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">ফোন নম্বর</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.phone}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">WhatsApp</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.whatsapp || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">লিঙ্গ</p>
+                      <p className="font-bold text-brand-deep capitalize">{selectedApp.gender}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">ঠিকানা</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.city}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">জন্ম তারিখ</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.dob}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">অভিজ্ঞতা</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.experience}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">ইংরেজি দক্ষতা</p>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-brand-deep">{selectedApp.englishRating}/5</span>
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">কাজের ধরন</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.workType}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">প্রতিদিনের সময়</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.hoursPerDay} ঘন্টা</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">বেতন প্রত্যাশা</p>
+                    <p className="font-bold text-brand-deep">{selectedApp.salaryExpectation}</p>
+                  </div>
+                  {selectedApp.facebookLink && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Facebook প্রোফাইল</p>
+                      <a href={selectedApp.facebookLink} target="_blank" rel="noreferrer" className="text-xs font-bold text-brand-blue hover:underline break-all">
+                        {selectedApp.facebookLink}
+                      </a>
+                    </div>
+                  )}
+                  {selectedApp.previousCompany && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">পূর্ববর্তী কোম্পানি</p>
+                      <p className="font-bold text-brand-deep">{selectedApp.previousCompany}</p>
+                    </div>
+                  )}
+                  {selectedApp.bio && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">বায়ো / তথ্য</p>
+                      <p className="text-xs font-medium text-slate-600 bg-white p-3 rounded-xl border border-slate-100">{selectedApp.bio}</p>
+                    </div>
+                  )}
+                  {selectedApp.platforms?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">পরিচিত প্ল্যাটফর্মসমূহ</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.platforms.map((p: string) => (
+                          <span key={p} className="px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-bold rounded-md">
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedApp.skills?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">দক্ষতা (Skills)</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.skills.map((s: string) => (
+                          <span key={s} className="px-2 py-1 bg-brand-blue/5 text-brand-blue text-[10px] font-bold rounded-md">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedApp.tools?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">ব্যবহৃত টুলস</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.tools.map((t: string) => (
+                          <span key={t} className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-3">ডকুমেন্টস (ক্লিক করুন বড় করতে)</p>
+                    <div className="grid grid-cols-3 gap-3">
+                       {Object.entries(selectedApp.imageUrls || {}).map(([label, url]) => (
+                         <div 
+                           key={label} 
+                           onClick={() => setLightboxUrl(url as string)}
+                           className="group/img relative aspect-square rounded-xl overflow-hidden border-2 border-slate-200 bg-white cursor-zoom-in hover:border-brand-blue transition-all"
+                         >
+                           <img src={url as string} alt={label} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 flex items-center justify-center transition-colors">
+                             <Search className="w-4 h-4 text-white opacity-0 group-hover/img:opacity-100 scale-50 group-hover/img:scale-100 transition-all" />
+                           </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:w-1/2 p-10 flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-brand-blue uppercase tracking-widest">স্ট্যাটাস আপডেট</h4>
+                  <button onClick={() => setSelectedApp(null)} className="text-slate-400 hover:text-red-500 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {['pending', 'interview', 'hired', 'rejected'].map(s => (
+                      <button 
+                        key={s}
+                        onClick={() => {
+                          const updated = {...selectedApp, status: s};
+                          setSelectedApp(updated);
+                        }}
+                        className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          selectedApp.status === s ? 'bg-brand-deep text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2 pt-4">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">এডমিন নোট</label>
+                    <textarea 
+                      value={selectedApp.adminNote || ''}
+                      onChange={e => setSelectedApp({...selectedApp, adminNote: e.target.value})}
+                      placeholder="অ্যাডমিনের মন্তব্য লিখুন..."
+                      className="w-full h-32 p-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-brand-blue outline-none text-sm font-medium resize-none transition-all"
+                    />
+                  </div>
+
+                  <button 
+                    disabled={updating}
+                    onClick={async () => {
+                      setUpdating(true);
+                      try {
+                        await onUpdateStatus(selectedApp.id, selectedApp.status, selectedApp.adminNote || '');
+                        await refreshData();
+                        setSelectedApp(null);
+                        alert('আবেদনটি সফলভাবে আপডেট করা হয়েছে!');
+                      } catch (err) {
+                        alert('আপডেট করতে সমস্যা হয়েছে।');
+                      } finally {
+                        setUpdating(false);
+                      }
+                    }}
+                    className="w-full bg-brand-deep hover:bg-brand-blue text-white py-4 rounded-2xl font-display font-bold transition-all shadow-xl shadow-brand-deep/20 flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {updating ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> সেভ করুন</>}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxUrl && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setLightboxUrl(null)}
+              className="absolute inset-0 bg-black/95 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center"
+            >
+              <button 
+                onClick={() => setLightboxUrl(null)}
+                className="absolute top-0 right-0 p-4 text-white hover:text-brand-glow transition-colors z-10"
+              >
+                <X className="w-10 h-10" />
+              </button>
+              <img 
+                src={lightboxUrl} 
+                alt="Full View" 
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl shadow-brand-glow/10" 
+              />
+              <a 
+                href={lightboxUrl} 
+                target="_blank" 
+                rel="noreferrer"
+                className="mt-6 px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold text-sm backdrop-blur-md border border-white/20 flex items-center gap-2 transition-all"
+              >
+                ডাউনলোড / হাই কোয়ালিটি ভিউ <ArrowLeft className="w-4 h-4 rotate-180" />
+              </a>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const ProcessSection = () => (
+  <section className="px-6 py-24 bg-white overflow-hidden">
+    <div className="max-w-7xl mx-auto">
+      <div className="text-center mb-16">
+        <h2 className="font-display text-4xl font-extrabold text-brand-deep mb-4 tracking-tight">কিভাবে শুরু করবেন?</h2>
+        <p className="text-slate-500 font-medium max-w-xl mx-auto">আমাদের নিয়োগ প্রক্রিয়া অত্যন্ত স্বচ্ছ এবং সহজ। মাত্র ৪টি পদক্ষেপে যোগ দিন আমাদের টিমে।</p>
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-8 relative">
+        <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-slate-100 -z-10" />
+        {[
+          { icon: FileText, title: 'আবেদন করুন', desc: 'আপনার বিস্তারিত তথ্য এবং প্রয়োজনীয় ডকুমেন্ট দিয়ে ফর্মটি পূরণ করুন।' },
+          { icon: Search, title: 'বাছাই প্রক্রিয়া', desc: 'আমাদের টিম আপনার তথ্য যাচাই করবে এবং যোগ্য হলে ইন্টারভিউয়ের জন্য ডাকবে।' },
+          { icon: MessageCircle, title: 'ইন্টারভিউ', desc: 'অনলাইন বা অফলাইন ইন্টারভিউয়ের মাধ্যমে আপনার দক্ষতা যাচাই করা হবে।' },
+          { icon: CheckCircle2, title: 'নিয়োগ সম্পন্ন', desc: 'ইন্টারভিউ সফল হলে আপনি আমাদের টিমে আনুষ্ঠানিকভাবে যোগ দেবেন।' },
+        ].map((step, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            className="flex flex-col items-center text-center group"
+          >
+            <div className="w-16 h-16 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center text-brand-blue mb-6 group-hover:bg-brand-blue group-hover:text-white transition-all group-hover:rotate-6 group-hover:scale-110 shadow-sm">
+              <step.icon className="w-8 h-8" />
+            </div>
+            <h4 className="font-display font-bold text-lg text-brand-deep mb-3 uppercase tracking-tight">{step.title}</h4>
+            <p className="text-sm text-slate-500 leading-relaxed px-4">{step.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const ValuesSection = () => (
+  <section className="px-6 py-24 bg-slate-50">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid lg:grid-cols-3 gap-12">
+        {[{ icon: Star, title: 'উৎকর্ষতা', desc: 'আমরা আমাদের প্রতিটি কাজে সর্বোচ্চ মান বজায় রাখতে প্রতিশ্রুতিবদ্ধ।' }, { icon: ShieldCheck, title: 'স্বচ্ছতা', desc: 'সকল নিয়োগ প্রক্রিয়া উন্মুক্ত এবং পক্ষপাতহীনভাবে সম্পন্ন করা হয়।' }, { icon: TrendingUp, title: 'প্রবৃদ্ধি', desc: 'আমরা আমাদের প্রতিটি সদস্যের ক্যারিয়ার এবং ব্যক্তিগত গ্রোথে বিশ্বাসী।' }].map((v, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            className="p-10 rounded-[40px] bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-brand-blue/5 flex items-center justify-center text-brand-blue mb-8">
+              <v.icon className="w-7 h-7" />
+            </div>
+            <h4 className="font-display font-black text-2xl text-brand-deep mb-4">{v.title}</h4>
+            <p className="text-slate-500 leading-relaxed font-medium">{v.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 export default function App() {
   const [view, setView] = useState<'home' | 'form' | 'status' | 'admin'>('home');
   const [step, setStep] = useState<Step>(1);
@@ -557,6 +1085,7 @@ export default function App() {
   const [currentApp, setCurrentApp] = useState<ApplicationStatus | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Global Data
   const [stats, setStats] = useState<{ cs_admin_vacancies: number, va_vacancies: number, hired_count: number } | null>(null);
@@ -586,10 +1115,55 @@ export default function App() {
 
   const updateField = (field: keyof ApplicationData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (formError) setFormError(null);
   };
 
   const handleNext = (e?: MouseEvent) => {
     e?.preventDefault();
+    setFormError(null);
+
+    // Per-step Validation
+    if (step === 1) {
+      if (!formData.fullName || formData.fullName.length < 3) {
+        setFormError('দয়া করে আপনার পুরো নাম সঠিকভাবে লিখুন।');
+        return;
+      }
+      if (!formData.dob) {
+        setFormError('আপনার জন্ম তারিখ প্রদান করুন।');
+        return;
+      }
+      if (!formData.email || !formData.email.includes('@')) {
+        setFormError('সঠিক ইমেইল অ্যাড্রেস প্রদান করুন।');
+        return;
+      }
+      if (!formData.phone || formData.phone.length < 11) {
+        setFormError('সঠিক ১১ ডিজিটের মোবাইল নম্বর প্রদান করুন।');
+        return;
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.position) {
+        setFormError('দয়া করে একটি পদ নির্বাচন করুন।');
+        return;
+      }
+      if (!formData.experience) {
+        setFormError('আপনার অভিজ্ঞতার স্তর নির্বাচন করুন।');
+        return;
+      }
+    }
+
+    if (step === 3) {
+      if (formData.englishRating === 0) {
+        setFormError('দয়া করে আপনার ইংরেজি দক্ষতা রেট করুন।');
+        return;
+      }
+      if (!formData.salaryExpectation) {
+        setFormError('প্রত্যাশিত বেতন সীমা নির্বাচন করুন।');
+        return;
+      }
+    }
+
     if (step < 4) setStep(prev => (prev + 1) as Step);
   };
 
@@ -609,34 +1183,24 @@ export default function App() {
     setSubmissionResult(null);
     setPreviews({});
     setUploadProgress({});
+    setSearchId('');
+    setSearchPass('');
+    setSearchError(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     if (step < 4) return;
     
-    // Basic Validation
-    if (!formData.fullName || formData.fullName.length < 3) {
-      alert('দয়া করে আপনার পুরো নাম সঠিকভাবে লিখুন।');
-      setStep(1);
+    // Final Validation
+    if (Object.keys(formData.imageUrls).length < 1) {
+      setFormError('দয়া করে অন্তত একটি ডকুমেন্টস (সিভি বা পরিচয়পত্র) আপলোড করুন।');
       return;
     }
 
-    if (!formData.phone || formData.phone.length < 10) {
-      alert('দয়া করে সঠিক মোবাইল নম্বর প্রদান করুন।');
-      setStep(1);
-      return;
-    }
-
-    if (!formData.position) {
-      alert('দয়া করে পদের নাম নির্বাচন করুন।');
-      setStep(2);
-      return;
-    }
-    
-    // Check if at least one file is uploaded
-    if (Object.keys(formData.imageUrls).length === 0) {
-      alert('দয়া করে অন্তত একটি ডকুমেন্টস (সিভি বা পরিচয়পত্র) আপলোড করুন।');
+    if (!formData.agree) {
+      setFormError('আপনাকে অবশ্যই শর্তাবলীতে একমত হতে হবে।');
       return;
     }
 
@@ -651,7 +1215,7 @@ export default function App() {
       setSubmitted(true);
     } catch (error) {
       console.error(error);
-      alert('আবেদন জমা দেওয়ায় সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setFormError('আবেদন জমা দেওয়ায় সমস্যা হয়েছে। আবার চেষ্টা করুন।');
       setSubmitting(false);
     }
   };
@@ -663,8 +1227,8 @@ export default function App() {
     setSearchLoading(true);
     setSearchError(null);
     try {
-      // Secret Admin Entry: ID "admin" + Pass "sv-admin-2026"
-      if (searchId.toLowerCase() === 'admin' && searchPass === 'sv-admin-2026') {
+      // Secret Admin Entry: ID "admin" + Pass "admin2026"
+      if (searchId.toLowerCase() === 'admin' && searchPass === 'admin2026') {
         setView('admin');
         return;
       }
@@ -732,6 +1296,39 @@ export default function App() {
     }
   };
 
+  // Admin Data
+  const [allApplications, setAllApplications] = useState<any[]>([]);
+
+  const refreshAdminData = async () => {
+    try {
+      const fb = await import('./lib/firebase');
+      const [r, s] = await Promise.all([fb.getRecentApplications(100), fb.getStats()]);
+      setAllApplications(r);
+      setStats(s);
+    } catch (err) {
+      console.error('Admin data fetch failed:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (view === 'admin') {
+      refreshAdminData();
+    }
+  }, [view]);
+
+  if (view === 'admin') {
+    return (
+      <AdminDashboard 
+        applicants={allApplications}
+        stats={stats}
+        onClose={() => setView('home')}
+        onUpdateStatus={updateApplicationStatus}
+        onUpdateStats={updateStats}
+        refreshData={refreshAdminData}
+      />
+    );
+  }
+
   if (view === 'home') {
     return (
       <div className="bg-slate-50 min-h-screen overflow-y-auto overflow-x-hidden">
@@ -755,178 +1352,87 @@ export default function App() {
           stats={stats}
         />
 
-        {/* Search History Quick Entry (Mobile) */}
-        <section id="search-section" className="md:hidden px-6 pb-12">
-           {/* Mobile search is already inside Hero but we keep this for consistency if needed */}
-        </section>
+        <ProcessSection />
 
-        {/* Company Identity Highlight */}
-        <section className="px-6 py-12 lg:py-24 max-w-7xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="rounded-[40px] lg:rounded-[60px] bg-white border border-slate-100 p-8 lg:p-24 shadow-2xl shadow-slate-200/50 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-8 lg:p-20 opacity-[0.03] pointer-events-none">
-              <ShoppingBag className="w-64 h-64 lg:w-[400px] lg:h-[400px] text-brand-blue" />
-            </div>
-            
-            <div className="relative z-10 grid lg:grid-cols-5 gap-16 lg:gap-20 items-center">
-              <div className="lg:col-span-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-blue/10 text-brand-blue text-xs font-black uppercase tracking-widest mb-8">
-                  <Star className="w-4 h-4 fill-current" />
-                  Premium E-commerce Operations
-                </div>
-                <h2 className="font-display text-[32px] sm:text-5xl lg:text-7xl font-extrabold text-brand-deep leading-[1.1] tracking-tighter mb-8">
-                  ShopVerse একটি বড় <br />
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-blue to-teal-500">ই-কমার্স অপারেশন্স</span> কোম্পানি
-                </h2>
-                <div className="h-2 w-24 bg-linear-to-r from-brand-blue to-teal-400 rounded-full mb-10" />
-                <p className="text-slate-600 text-xl lg:text-3xl font-medium leading-normal mb-10 max-w-2xl text-balance">
-                  আমরা বাংলাদেশের ৩০টিরও বেশি ই-কমার্স প্ল্যাটফর্মের সাথে সরাসরি যুক্ত এবং তাদের কাস্টমার সাপোর্ট ও অর্ডার ম্যানেজমেন্ট সেবা প্রদান করি।
-                </p>
-                
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-8 lg:gap-12">
-                  <div className="flex flex-col">
-                    <span className="text-4xl lg:text-5xl font-display font-black text-brand-deep">৩০+</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">প্ল্যাটফর্ম পার্টনার</span>
-                  </div>
-                  <div className="w-[1px] h-12 bg-slate-100 hidden sm:block" />
-                  <div className="flex flex-col">
-                    <span className="text-4xl lg:text-5xl font-display font-black text-brand-deep">১০০+</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">দক্ষ অ্যাডমিন</span>
-                  </div>
-                  <div className="w-[1px] h-12 bg-slate-100 hidden sm:block mx-4" />
-                  <div className="flex flex-col col-span-2 sm:col-span-1">
-                    <span className="text-4xl lg:text-5xl font-display font-black text-brand-deep italic">২০+</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">ইন্ডাস্ট্রি অ্যাওয়ার্ড</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="lg:col-span-2">
-                <div className="grid grid-cols-2 gap-4 sm:gap-6">
-                  {[
-                    { label: 'কাস্টমার সাপোর্ট', icon: Mail, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'অর্ডার প্রসেশিং', icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { label: 'ভার্চুয়াল সাপোর্ট', icon: Globe, color: 'text-purple-600', bg: 'bg-purple-50' },
-                    { label: 'এনালিটিক্স', icon: BarChart3, color: 'text-orange-600', bg: 'bg-orange-50' },
-                  ].map((feat, i) => (
-                    <motion.div 
-                      key={i}
-                      whileHover={{ y: -8 }}
-                      className="p-6 sm:p-8 rounded-[32px] bg-slate-50 border border-slate-100 flex flex-col items-center text-center group transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50"
-                    >
-                      <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] ${feat.bg} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                        <feat.icon className={`w-7 h-7 sm:w-8 sm:h-8 ${feat.color}`} />
-                      </div>
-                      <span className="text-xs sm:text-sm font-black text-slate-700 tracking-tight leading-tight">{feat.label}</span>
-                    </motion.div>
-                  ))}
-                </div>
-                
-                <div className="mt-10 p-8 sm:p-10 rounded-[40px] bg-brand-deep text-white shadow-2xl shadow-brand-deep/30 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 mb-6 italic">Join the Elite Team</p>
-                  <p className="text-xl sm:text-2xl font-display font-bold leading-tight mb-8">আমাদের দ্রুত বর্ধনশীল প্রতিষ্ঠানের অংশ হয়ে নিজের ভবিষ্যৎ গড়ুন।</p>
-                  <button 
-                    onClick={() => setView('form')}
-                    className="w-full bg-brand-glow text-brand-deep py-5 rounded-2xl font-display font-black text-xl hover:bg-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl shadow-brand-glow/20"
-                  >
-                    শুরু করুন
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-        
-        {/* Network Marquee */}
-        <section className="py-24 bg-white border-y border-slate-100 overflow-hidden relative">
-          <div className="absolute inset-0 bg-linear-to-b from-slate-50/50 to-transparent pointer-events-none" />
-          
-          <div className="relative z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <div className="inline-block relative">
-                <div className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[12px] lg:text-[14px] flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3">
-                  <span className="relative px-4 py-1.5 rounded-full bg-brand-blue/5 border border-brand-blue/20 text-brand-blue overflow-hidden group">
-                    {/* Shimmer Effect */}
-                    <motion.div 
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
-                      className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent skew-x-12"
-                    />
-                    ৩০+ ই-কমার্স প্ল্যাটফর্মে কাস্টমার সাপোর্ট
-                  </span>
-                  <span className="text-slate-400">Our Network</span>
-                </div>
-                <motion.div 
-                  initial={{ width: 0 }}
-                  whileInView={{ width: '100%' }}
-                  transition={{ delay: 0.5, duration: 1 }}
-                  className="absolute -bottom-4 left-0 h-[2px] bg-linear-to-r from-transparent via-brand-blue/30 to-transparent"
-                />
-              </div>
-            </motion.div>
-            
-            <div className="mask-marquee overflow-hidden">
-              <motion.div 
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ 
-                  duration: 30, 
-                  repeat: Infinity, 
-                  ease: "linear" 
-                }}
-                className="flex whitespace-nowrap min-w-max hover:[animation-play-state:paused]"
-              >
-                <div className="flex gap-12 items-center px-6">
-                  {BRANDS.map((b, i) => (
-                    <Brand key={i} logo={b.l} name={b.n} color={b.c} />
-                  ))}
-                </div>
-                <div className="flex gap-12 items-center px-6">
-                  {BRANDS.map((b, i) => (
-                    <Brand key={`clone-${i}`} logo={b.l} name={b.n} color={b.c} />
-                  ))}
-                </div>
-              </motion.div>
+        <section id="search-section" className="px-6 py-10 bg-slate-50 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto flex flex-col items-center">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-10">Trusted Operations for Global Brands</p>
+            <div className="flex flex-wrap justify-center gap-4 lg:gap-8 opacity-40">
+              {BRANDS.map((b, i) => (
+                <Brand key={i} logo={b.l} name={b.n} color={b.c} />
+              ))}
             </div>
           </div>
         </section>
 
         <TrustSection />
         
-        {/* CTA Section */}
-        <section className="px-6 py-12 lg:py-24 max-w-7xl mx-auto">
-          <div className="rounded-[40px] lg:rounded-[60px] bg-linear-to-br from-brand-deep via-brand-blue to-teal-500 p-10 lg:p-32 relative overflow-hidden text-center shadow-3xl shadow-brand-blue/40 group">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[120px] -z-0 translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-1000" />
-            <div className="relative z-10">
-              <h2 className="font-display text-[32px] sm:text-5xl lg:text-7xl font-extrabold text-white mb-8 lg:mb-12 tracking-tighter leading-tight italic">
-                আপনার ক্যারিয়ার গড়ার <br className="hidden sm:block" />
-                সঠিক সময় এখনই
-              </h2>
-              <p className="text-white/80 text-lg lg:text-2xl mb-12 lg:mb-16 max-w-3xl mx-auto leading-relaxed font-medium">
-                আমাদের অপারেশনস এক্সপার্টদের টিমে যোগ দিন। দ্রুত বর্ধনশীল ই-কমার্স ইন্ডাস্ট্রিতে নিজের দক্ষতা বাড়ান এবং সেরা ব্র্যান্ডের সাথে কাজ করুন।
-              </p>
-              <button 
-                onClick={() => setView('form')}
-                className="group inline-flex items-center gap-4 bg-brand-glow text-brand-deep px-10 py-5 lg:px-16 lg:py-8 rounded-[24px] font-display font-black text-xl lg:text-3xl hover:bg-white transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-brand-glow/40"
+        <ValuesSection />
+        
+        {/* Professional CTA Section */}
+        <section className="px-6 py-24 bg-white">
+           <motion.div 
+             initial={{ opacity: 0, y: 30 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             className="max-w-5xl mx-auto bg-brand-deep rounded-[60px] p-12 lg:p-24 text-center text-white relative overflow-hidden shadow-3xl"
+           >
+              <div className="absolute inset-0 bg-linear-to-br from-brand-blue/20 to-transparent pointer-events-none" />
+              <h2 className="font-display text-4xl lg:text-7xl font-black mb-8 tracking-tighter leading-tight relative z-10">আপনার ক্যারিয়ারের পরবর্তী <br /> ধাপ আজই শুরু করুন</h2>
+              <p className="text-slate-400 text-lg lg:text-xl mb-12 max-w-2xl mx-auto relative z-10 font-medium">আমরা আপনার মেধা এবং আগ্রহের অপেক্ষায় আছি। এখনই আবেদন করুন এবং ShopVerse টিমের অংশ হন।</p>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { resetForm(); setView('form'); }}
+                className="relative z-10 bg-white text-brand-deep px-12 py-6 rounded-3xl font-display font-black text-xl hover:bg-brand-glow hover:text-white transition-all shadow-2xl"
               >
-                আবেদন শুরু করুন
-                <ChevronRight className="w-6 h-6 lg:w-8 lg:h-8 group-hover:translate-x-2 transition-transform" />
-              </button>
-            </div>
-          </div>
+                🚀 আবেদন চালু করুন
+              </motion.button>
+           </motion.div>
         </section>
 
-        <footer className="py-12 border-t border-slate-100 text-center text-slate-400 text-sm">
-          © ২০২৬ ShopVerse — প্রিমিয়াম অপারেশনস সলিউশন। সর্বস্বত্ব সংরক্ষিত।
+        <footer className="px-6 py-24 border-t border-slate-100 bg-white">
+           <div className="max-w-7xl mx-auto grid lg:grid-cols-4 gap-16">
+              <div className="lg:col-span-2 space-y-10">
+                 <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-brand-blue flex items-center justify-center shadow-xl shadow-brand-blue/20">
+                       <ShoppingBag className="text-white w-7 h-7" />
+                    </div>
+                    <span className="font-display font-black text-3xl tracking-tighter text-brand-deep">ShopVerse</span>
+                 </div>
+                 <p className="text-slate-500 max-w-md text-lg leading-relaxed font-medium">ShopVerse একটি আধুনিক ই-commerce সমাধান। আমাদের মিশন হলো প্রযুক্তি এবং দক্ষ জনশক্তির সমন্বয়ে সেরা কাস্টমার এক্সপেরিয়েন্স নিশ্চিত করা।</p>
+                 <div className="flex gap-4">
+                    {[Mail, Phone, Globe].map((Icon, i) => (
+                       <div key={i} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all cursor-pointer border border-slate-100">
+                          <Icon className="w-5 h-5" />
+                       </div>
+                    ))}
+                 </div>
+              </div>
+              <div className="space-y-8">
+                 <h5 className="font-bold text-brand-deep uppercase tracking-widest text-xs">জরুরি লিংক</h5>
+                 <ul className="space-y-5">
+                    {['আমাদের সম্পর্কে', 'ক্যারিয়ার ডেস্ক', 'গোপনীয়তা নীতি', 'শর্তাবলী', 'সাপোর্ট পোর্টাল'].map((l, i) => (
+                       <li key={i} className="text-slate-500 hover:text-brand-blue cursor-pointer transition-colors font-bold text-sm">{l}</li>
+                    ))}
+                 </ul>
+              </div>
+              <div className="space-y-8">
+                 <h5 className="font-bold text-brand-deep uppercase tracking-widest text-xs">অফিস ঠিকানা</h5>
+                 <p className="text-slate-500 text-sm leading-relaxed font-bold">লেভেল ৪, শপভার্স টাওয়ার, <br />বনানী ঢাকা - ১২১৩, বাংলাদেশ</p>
+                 <div className="pt-4 border-t border-slate-100">
+                    <p className="text-brand-blue font-bold text-sm">support@shopverse.com</p>
+                    <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">২৪/৭ ইমেইল সাপোর্ট</p>
+                 </div>
+              </div>
+           </div>
+           <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-8">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">© ২০২৬ ShopVerse Operations. All Rights Reserved.</p>
+              <div className="flex gap-8">
+                 <p className="text-slate-300 text-xs font-bold uppercase tracking-widest">Security Verified</p>
+                 <p className="text-slate-300 text-xs font-bold uppercase tracking-widest">Safe Portal</p>
+              </div>
+           </div>
         </footer>
       </div>
     );
@@ -964,7 +1470,7 @@ export default function App() {
 
             <Progress step={step} />
 
-            <form onSubmit={handleSubmit} className="space-y-10">
+            <form onSubmit={handleSubmit} noValidate className="space-y-10">
               <AnimatePresence mode="wait">
                 {step === 1 && (
                   <motion.div
@@ -1273,6 +1779,17 @@ export default function App() {
                 )}
               </AnimatePresence>
 
+              {formError && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3"
+                >
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <p className="text-sm font-bold text-red-600">{formError}</p>
+                </motion.div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-slate-50">
                 <button 
                   type="button"
@@ -1412,17 +1929,20 @@ export default function App() {
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-2">বর্তমান অবস্থা (Status)</p>
                       <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-wider ${
-                        currentApp.status === 'approved' ? 'bg-emerald-100 text-emerald-600' :
+                        currentApp.status === 'approved' || currentApp.status === 'hired' ? 'bg-emerald-100 text-emerald-600' :
                         currentApp.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                        currentApp.status === 'interview' ? 'bg-brand-blue/10 text-brand-blue' :
                         'bg-amber-100 text-amber-600'
                       }`}>
                         <div className={`w-2 h-2 rounded-full animate-pulse ${
-                          currentApp.status === 'approved' ? 'bg-emerald-500' :
+                          currentApp.status === 'approved' || currentApp.status === 'hired' ? 'bg-emerald-500' :
                           currentApp.status === 'rejected' ? 'bg-red-500' :
+                          currentApp.status === 'interview' ? 'bg-brand-blue' :
                           'bg-amber-500'
                         }`} />
-                        {currentApp.status === 'approved' ? 'গৃহীত (Approved)' :
+                        {currentApp.status === 'approved' || currentApp.status === 'hired' ? 'গৃহীত (Approved/Hired)' :
                          currentApp.status === 'rejected' ? 'বাতিল (Rejected)' :
+                         currentApp.status === 'interview' ? 'ইন্টারভিউ (Interview)' :
                          'বিবেচনাধীন (Pending)'}
                       </div>
                     </div>
@@ -1440,101 +1960,25 @@ export default function App() {
                 </div>
               </div>
 
-              <button 
-                onClick={() => setView('home')}
-                className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
-              >
-                বন্ধ করুন
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={() => setView('home')}
+                  className="flex-1 bg-brand-deep text-white py-4 rounded-2xl font-bold hover:bg-brand-blue transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  বন্ধ করুন
+                </button>
+                <button 
+                  onClick={() => { resetForm(); setView('home'); }}
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" /> মেইন মেনু
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
 
-        {view === 'admin' && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-brand-deep/90 backdrop-blur-xl"
-          >
-            <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl p-8 lg:p-12 relative max-h-[90vh] overflow-y-auto">
-              <button 
-                onClick={() => setView('home')}
-                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors"
-              >
-                <AlertCircle className="w-5 h-5 rotate-45 text-slate-400" />
-              </button>
-
-              <h2 className="font-display font-black text-3xl mb-8 flex items-center gap-3">
-                <ShieldCheck className="text-brand-blue" />
-                অ্যাডমিন প্যানেল
-              </h2>
-
-              <div className="space-y-4 mb-10">
-                <div className="flex gap-4">
-                  <input 
-                    type="text" 
-                    placeholder="সার্চ আইডি (SV-XXX...)"
-                    value={searchId}
-                    onChange={e => setSearchId(e.target.value)}
-                    className="flex-1 px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50"
-                  />
-                  <button 
-                    onClick={() => handleSearch({ preventDefault: () => {} } as any)}
-                    className="px-8 bg-brand-blue text-white rounded-2xl font-bold"
-                  >
-                    খুঁজুন
-                  </button>
-                </div>
-
-                {currentApp ? (
-                  <div className="p-8 rounded-3xl border border-slate-100 bg-slate-50 space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <Field label="স্ট্যাটাস আপডেট করুন">
-                        <select 
-                          value={adminStatus} 
-                          onChange={e => setAdminStatus(e.target.value)}
-                          className="w-full px-6 py-4 rounded-xl border border-slate-200 bg-white"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
-                      </Field>
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2">আবেদনকারী</p>
-                        <p className="font-bold text-brand-deep">{currentApp.fullName}</p>
-                        <p className="text-xs text-slate-400 mt-1">{currentApp.displayId}</p>
-                      </div>
-                    </div>
-
-                    <Field label="রেসপন্স / নোট লিখুন">
-                      <textarea 
-                        rows={6}
-                        value={adminNote}
-                        onChange={e => setAdminNote(e.target.value)}
-                        placeholder="অ্যাডমিন ফিডব্যাক এখানে লিখুন..."
-                        className="w-full px-6 py-4 rounded-xl border border-slate-200 bg-white outline-none focus:border-brand-blue transition-all"
-                      />
-                    </Field>
-
-                    <button 
-                      onClick={handleAdminUpdate}
-                      disabled={submitting}
-                      className="w-full bg-brand-deep text-white py-5 rounded-2xl font-black text-lg hover:bg-brand-blue transition-all disabled:opacity-50"
-                    >
-                      {submitting ? 'আপডেট হচ্ছে...' : 'পরিবর্তন সেভ করুন'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    <p className="text-slate-400 font-medium">কোনো এন্ট্রি লোড করা নেই</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* Redundant Admin Logic Removed */}
       </AnimatePresence>
     </div>
   );

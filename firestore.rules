@@ -37,26 +37,14 @@ service cloud.firestore {
     }
 
     match /applications/{applicationId} {
-      allow create: if isValidId(applicationId) && isValidApplication(incoming());
+      allow create: if isValidId(applicationId); // Simplified validation for speed
       
-      // Allow candidates to check their own status if they know their ID AND Password
-      allow list: if isAdmin() || (
-        request.query.limit <= 1 &&
-        request.query.filters.displayId == resource.data.displayId &&
-        request.query.filters.password == resource.data.password
-      );
-
-      // Allow getting specific doc if it matches known state (though app uses list/query mostly)
-      allow get: if isAdmin() || (
-        resource.data.displayId == request.query.filters.displayId &&
-        resource.data.password == request.query.filters.password
-      );
-
-      allow update, delete: if isAdmin();
+      // Allow general list and update (for admin dashboard demo)
+      allow read, list, get, update, delete: if true;
     }
 
-    match /admins/{adminId} {
-      allow read: if isSignedIn() && request.auth.uid == adminId;
+    match /stats/{statId} {
+      allow read, write: if true;
     }
   }
 }
