@@ -32,7 +32,10 @@ import {
   FileSearch,
   MessageCircle,
   Camera,
-  X
+  X,
+  Fingerprint,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   submitApplication, 
@@ -478,67 +481,85 @@ const TrustSection = () => (
 // --- Form Components ---
 
 const Progress = ({ step }: { step: Step }) => (
-  <div className="flex items-center justify-between gap-1 sm:gap-2 mb-10 max-w-md mx-auto">
+  <div className="flex items-center justify-between gap-1 sm:gap-2 mb-10 max-w-lg mx-auto">
     {[
-      { s: 1, l: 'ব্যক্তিগত' },
-      { s: 2, l: 'অভিজ্ঞতা' },
-      { s: 3, l: 'দক্ষতা' },
-      { s: 4, l: 'ডকুমেন্ট' }
+      { s: 1, bn: 'ব্যক্তিগত', en: 'Personal' },
+      { s: 2, bn: 'অভিজ্ঞতা', en: 'Experience' },
+      { s: 3, bn: 'দক্ষতা', en: 'Skills' },
+      { s: 4, bn: 'ডকুমেন্ট', en: 'Documents' }
     ].map((item) => (
       <div key={item.s} className="flex flex-col items-center gap-2 flex-1 last:flex-none">
         <div className="flex items-center gap-1 sm:gap-2 w-full">
-          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-xs sm:text-sm transition-all duration-500 flex-shrink-0 ${
-            step >= item.s ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30' : 'bg-white border-2 border-slate-100 text-slate-300'
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-display font-bold text-sm transition-all duration-500 flex-shrink-0 ${
+            step >= item.s ? 'bg-brand-deep text-white shadow-xl shadow-brand-deep/20 scale-110' : 'bg-slate-50 border border-slate-100 text-slate-300'
           }`}>
-            {step > item.s ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : item.s}
+            {step > item.s ? <CheckCircle2 className="w-5 h-5" /> : item.s}
           </div>
-          {item.s < 4 && <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step > item.s ? 'bg-brand-blue' : 'bg-slate-100'}`} />}
+          {item.s < 4 && <div className={`h-[2px] flex-1 rounded-full transition-all duration-700 ${step > item.s ? 'bg-brand-blue' : 'bg-slate-100'}`} />}
         </div>
-        <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${step >= item.s ? 'text-brand-blue' : 'text-slate-300'}`}>
-          {item.l}
-        </span>
+        <div className="flex flex-col items-center">
+          <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${step >= item.s ? 'text-brand-deep' : 'text-slate-300'}`}>
+            {item.en}
+          </span>
+          <span className={`text-[9px] font-bold ${step >= item.s ? 'text-slate-500' : 'text-slate-200'}`}>
+            {item.bn}
+          </span>
+        </div>
       </div>
     ))}
   </div>
 );
 
-const Field: React.FC<{ label: string, required?: boolean, children: React.ReactNode }> = ({ label, required, children }) => (
-  <div className="space-y-2">
-    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">
-      {label} {required && <span className="text-red-400">*</span>}
-    </label>
+const Field: React.FC<{ 
+  labelBn: string, 
+  labelEn: string, 
+  required?: boolean, 
+  children: React.ReactNode 
+}> = ({ labelBn, labelEn, required, children }) => (
+  <div className="space-y-4">
+    <div className="flex flex-col pl-1">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{labelEn}</span>
+        {required && <span className="text-red-500 text-xs">*</span>}
+      </div>
+      <label className="text-sm font-bold text-brand-deep mt-0.5">{labelBn}</label>
+    </div>
     {children}
   </div>
 );
 
 const UploadBox: React.FC<{ 
-  label: string, 
+  labelBn: string, 
+  labelEn: string,
   icon: any, 
   onFileSelect: (f: File) => void, 
   isUploaded: boolean, 
   progress?: number, 
   accept?: string,
   previewUrl?: string 
-}> = ({ label, icon: Icon, onFileSelect, isUploaded, progress, accept, previewUrl }) => (
-  <label className={`relative group flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer h-[180px] overflow-hidden ${
-    isUploaded ? 'border-brand-blue bg-brand-blue/5' : 'border-slate-200 bg-slate-50 hover:border-brand-blue/30'
+}> = ({ labelBn, labelEn, icon: Icon, onFileSelect, isUploaded, progress, accept, previewUrl }) => (
+  <label className={`relative group flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 border-dashed transition-all cursor-pointer h-[200px] overflow-hidden ${
+    isUploaded ? 'border-brand-blue bg-brand-blue/5' : 'border-slate-100 bg-slate-50 hover:border-brand-blue/30'
   }`}>
     {previewUrl && (
-      <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-10 transition-opacity">
+      <div className="absolute inset-0 z-0 opacity-40 group-hover:opacity-20 transition-opacity">
         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
       </div>
     )}
     
-    <div className="relative z-10 flex flex-col items-center gap-2">
-      <div className={`p-3 rounded-xl transition-all ${isUploaded ? 'bg-brand-blue text-white shadow-lg' : 'bg-white text-slate-400 group-hover:scale-110'}`}>
-        <Icon className="w-6 h-6" />
+    <div className="relative z-10 flex flex-col items-center text-center gap-2">
+      <div className={`p-4 rounded-2xl transition-all ${isUploaded ? 'bg-brand-blue text-white shadow-xl' : 'bg-white text-slate-400 group-hover:scale-110 shadow-sm'}`}>
+        <Icon className="w-8 h-8" />
       </div>
-      <span className={`text-[10px] font-black uppercase tracking-widest ${isUploaded ? 'text-brand-blue' : 'text-slate-500'}`}>{label}</span>
+      <div>
+        <p className={`text-[10px] font-black uppercase tracking-widest ${isUploaded ? 'text-brand-blue' : 'text-slate-400'}`}>{labelEn}</p>
+        <p className={`text-xs font-bold ${isUploaded ? 'text-brand-deep' : 'text-slate-500'}`}>{labelBn}</p>
+      </div>
       
       {isUploaded && !progress && (
-        <div className="mt-1 flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+        <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 scale-90">
           <CheckCircle2 className="w-3 h-3" />
-          <span className="text-[10px] font-black">আপলোড সম্পন্ন</span>
+          <span className="text-[9px] font-black uppercase">Uploaded</span>
         </div>
       )}
     </div>
@@ -546,20 +567,20 @@ const UploadBox: React.FC<{
     <input type="file" className="hidden" accept={accept || "image/*"} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} />
     
     {progress !== undefined && progress > 0 && progress < 100 && (
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 p-4 transition-all backdrop-blur-sm">
-        <div className="relative w-16 h-16 flex items-center justify-center mb-2">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/95 p-6 backdrop-blur-md">
+        <div className="relative w-20 h-20 flex items-center justify-center mb-4">
           <svg className="w-full h-full -rotate-90">
-            <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+            <circle cx="40" cy="40" r="36" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
             <circle 
-              cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="4" 
-              strokeDasharray={176}
-              strokeDashoffset={176 - (176 * progress) / 100}
-              className="text-brand-blue transition-all duration-300" 
+              cx="40" cy="40" r="36" fill="transparent" stroke="currentColor" strokeWidth="4" 
+              strokeDasharray={226}
+              strokeDashoffset={226 - (226 * progress) / 100}
+              className="text-brand-blue transition-all duration-300 stroke-round" 
             />
           </svg>
-          <span className="absolute font-black text-xs text-brand-blue">{Math.round(progress)}%</span>
+          <span className="absolute font-black text-lg text-brand-blue">{Math.round(progress)}%</span>
         </div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">ফাইল আপলোড হচ্ছে</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Uploading...</p>
       </div>
     )}
   </label>
@@ -1086,6 +1107,15 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, field: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
 
   // Global Data
   const [stats, setStats] = useState<{ cs_admin_vacancies: number, va_vacancies: number, hired_count: number } | null>(null);
@@ -1481,64 +1511,64 @@ export default function App() {
                     className="space-y-6"
                   >
                     <div className="grid md:grid-cols-2 gap-6">
-                      <Field label="আপনার পুরো নাম (Full Name)" required>
+                      <Field labelBn="আপনার পুরো নাম" labelEn="Full Name" required>
                         <input 
                           type="text" 
-                          placeholder="উদা: আবদুল্লাহ আল মামুন"
+                          placeholder="e.g. Abdullah Al Mamun"
                           value={formData.fullName}
                           onChange={e => updateField('fullName', e.target.value)}
-                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base"
+                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base font-bold text-brand-deep placeholder:text-slate-300"
                         />
                       </Field>
-                      <Field label="জন্ম তারিখ (Date of Birth)" required>
+                      <Field labelBn="জন্ম তারিখ" labelEn="Date of Birth" required>
                         <input 
                           type="date" 
                           value={formData.dob}
                           onChange={e => updateField('dob', e.target.value)}
-                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base"
+                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base font-bold text-brand-deep"
                         />
                       </Field>
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
-                      <Field label="ইমেইল অ্যাড্রেস (Email Address)" required>
+                      <Field labelBn="ইমেইল অ্যাড্রেস" labelEn="Email Address" required>
                         <input 
                           type="email" 
                           placeholder="name@example.com"
                           value={formData.email}
                           onChange={e => updateField('email', e.target.value)}
-                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base"
+                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base font-bold text-brand-deep placeholder:text-slate-300"
                         />
                       </Field>
-                      <Field label="মোবাইল নম্বর (Phone Number)" required>
+                      <Field labelBn="মোবাইল নম্বর" labelEn="Phone Number" required>
                         <input 
                           type="tel" 
                           placeholder="01XXX-XXXXXX"
                           value={formData.phone}
                           onChange={e => updateField('phone', e.target.value)}
-                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base"
+                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base font-bold text-brand-deep placeholder:text-slate-300"
                         />
                       </Field>
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
-                      <Field label="শহর (City)">
+                      <Field labelBn="শহর" labelEn="City">
                         <input 
                           type="text" 
-                          placeholder="ঢাকা / চট্টগ্রাম..."
+                          placeholder="Dhaka / Chittagong..."
                           value={formData.city}
                           onChange={e => updateField('city', e.target.value)}
-                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base"
+                          className="w-full px-5 py-3.5 lg:px-6 lg:py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all text-sm lg:text-base font-bold text-brand-deep placeholder:text-slate-300"
                         />
                       </Field>
-                      <Field label="লিঙ্গ (Gender)">
+                      <Field labelBn="লিঙ্গ" labelEn="Gender">
                         <select 
                           value={formData.gender}
                           onChange={e => updateField('gender', e.target.value)}
-                          className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all appearance-none"
+                          className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all appearance-none font-bold text-brand-deep"
                         >
-                          <option value="">লিঙ্গ নির্বাচন করুন</option>
-                          <option value="male">পুরুষ</option>
-                          <option value="female">মহিলা</option>
-                          <option value="other">অন্যান্য</option>
+                          <option value="">নির্বাচন করুন (Select)</option>
+                          <option value="male">পুরুষ (Male)</option>
+                          <option value="female">মহিলা (Female)</option>
+                          <option value="other">অন্যান্য (Other)</option>
                         </select>
                       </Field>
                     </div>
@@ -1553,11 +1583,11 @@ export default function App() {
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-8"
                   >
-                    <Field label="যে পদের জন্য আবেদন করছেন" required>
+                    <Field labelBn="আবেদনকৃত পদ" labelEn="Applied Position" required>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
-                          { id: 'cs_admin', label: 'CS অ্যাডমিন', icon: Mail },
-                          { id: 'va', label: 'ভার্চুয়াল অ্যাসিস্ট্যান্ট', icon: Globe },
+                          { id: 'cs_admin', label: 'CS অ্যাডমিন (Customer Support)', icon: Mail },
+                          { id: 'va', label: 'ভার্চুয়াল অ্যাসিস্ট্যান্ট (VA)', icon: Globe },
                         ].map(pos => (
                           <button
                             key={pos.id}
@@ -1577,20 +1607,20 @@ export default function App() {
                     </Field>
                     
                     <div className="grid md:grid-cols-2 gap-6">
-                      <Field label="অভিজ্ঞতার স্তর" required>
+                      <Field labelBn="অভিজ্ঞতার স্তর" labelEn="Experience Level" required>
                         <select 
                           value={formData.experience}
                           onChange={e => updateField('experience', e.target.value)}
-                          className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all"
+                          className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-deep"
                         >
-                          <option value="">অভিজ্ঞতা নির্বাচন করুন</option>
-                          <option value="fresher">ফ্রেশার (০-৬ মাস)</option>
-                          <option value="junior">জুনিয়র (৬ মাস - ১ বছর)</option>
-                          <option value="mid">মিড (১-৩ বছর)</option>
-                          <option value="senior">সিনিয়র (৩+ বছর)</option>
+                          <option value="">নির্বাচন করুন (Select)</option>
+                          <option value="fresher">ফ্রেশার (Fresher: 0-6 Months)</option>
+                          <option value="junior">জুনিয়র (Junior: 6M - 1Y)</option>
+                          <option value="mid">মিড (Mid: 1-3 Years)</option>
+                          <option value="senior">সিনিয়র (Senior: 3+ Years)</option>
                         </select>
                       </Field>
-                      <Field label="দৈনিক কত সময় দিতে পারবেন?">
+                      <Field labelBn="দৈনিক সময়" labelEn="Daily Availability">
                         <div className="px-2 pt-4">
                           <input 
                             type="range" 
@@ -1601,21 +1631,21 @@ export default function App() {
                             className="w-full accent-brand-blue h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
                           />
                           <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">
-                            <span>১ ঘণ্টা</span>
-                            <span className="text-brand-blue font-black">{formData.hoursPerDay} ঘণ্টা / দিন</span>
-                            <span>১২ ঘণ্টা</span>
+                            <span>1 Hour</span>
+                            <span className="text-brand-blue font-black">{formData.hoursPerDay} Hours / Day</span>
+                            <span>12 Hours</span>
                           </div>
                         </div>
                       </Field>
                     </div>
 
-                    <Field label="নিজের সম্পর্কে কিছু বলুন (Self Bio)">
+                    <Field labelBn="নিজের সম্পর্কে" labelEn="Professional Bio">
                       <textarea 
                         rows={4}
-                        placeholder="আপনার অভিজ্ঞতা ও কেন আপনি এই পদের জন্য যোগ্য তা লিখুন..."
+                        placeholder="Tell us about yourself and your professional background..."
                         value={formData.bio}
                         onChange={e => updateField('bio', e.target.value)}
-                        className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all resize-none"
+                        className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-brand-blue outline-none transition-all resize-none font-medium text-brand-deep"
                       />
                     </Field>
                   </motion.div>
@@ -1629,8 +1659,8 @@ export default function App() {
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-8"
                   >
-                    <Field label="যেসব ই-কমার্স প্ল্যাটফর্ম আপনি জানেন">
-                      <div className="flex flex-wrap gap-2">
+                    <Field labelBn="জানা ই-কমার্স প্ল্যাটফর্ম" labelEn="Known Platforms">
+                      <div className="flex flex-wrap gap-2 text-brand-deep">
                         {['Shopify', 'WooCommerce', 'Daraz', 'Facebook Shop', 'Instagram', 'Amazon'].map(it => (
                           <Tag 
                             key={it} 
@@ -1647,8 +1677,8 @@ export default function App() {
                       </div>
                     </Field>
 
-                    <Field label="আপনার প্রধান দক্ষতাসমূহ">
-                      <div className="flex flex-wrap gap-2">
+                    <Field labelBn="প্রধান দক্ষতাসমূহ" labelEn="Core Skills">
+                      <div className="flex flex-wrap gap-2 text-brand-deep">
                         {['Customer Chat', 'Order Management', 'Product Listing', 'Meta Business', 'Excel/Sheets', 'Returns/Refunds'].map(it => (
                           <Tag 
                             key={it} 
@@ -1665,7 +1695,7 @@ export default function App() {
                       </div>
                     </Field>
 
-                    <Field label="ইংরেজি ভাষায় দক্ষতা" required>
+                    <Field labelBn="ইংরেজি দক্ষতা" labelEn="English Proficiency" required>
                       <div className="flex flex-col items-center gap-4 py-4 rounded-2xl bg-slate-50 border border-slate-100">
                         <div className="flex gap-2">
                           {[1,2,3,4,5].map(i => (
@@ -1681,15 +1711,15 @@ export default function App() {
                             </button>
                           ))}
                         </div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                          {formData.englishRating === 0 ? 'আপনার দক্ষতা রেট করুন' : 
-                           formData.englishRating === 5 ? 'পেশাদার পর্যায়ে দক্ষতা' : 
-                           formData.englishRating > 3 ? 'চমৎকার' : 'কথোপকথনযোগ্য'}
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          {formData.englishRating === 0 ? 'Rate your skill (1-5)' : 
+                           formData.englishRating === 5 ? 'Professional / Fluent' : 
+                           formData.englishRating > 3 ? 'Excellent' : 'Conversational'}
                         </p>
                       </div>
                     </Field>
 
-                    <Field label="প্রত্যাশিত মাসিক বেতন (টাকায়)" required>
+                    <Field labelBn="প্রত্যাশিত মাসিক বেতন" labelEn="Expected Monthly Salary" required>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {['৮,০০০–১২,০০০', '১২,০০০–২০,০০০', '২০,০০০+'].map(val => (
                           <button
@@ -1721,13 +1751,14 @@ export default function App() {
                     <div className="p-6 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex gap-4">
                       <AlertCircle className="w-6 h-6 text-brand-blue flex-shrink-0" />
                       <p className="text-xs text-slate-600 leading-relaxed">
-                        আপনার সিভি এবং পরিচয়পত্রের ছবি অ্যাপ্লিকেশানকে আরও শক্তিশালী করবে। প্রতিটি ফাইল সর্বোচ্চ ৫ মেগাবাইট হতে পারবে।
+                        Supporting documents (CV & Photo) help us process your application faster. Max file size: 5MB per file.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                       <UploadBox 
-                        label="প্রোফাইল ফটো" 
+                        labelBn="প্রোফাইল ফটো"
+                        labelEn="Profile Photo"
                         icon={Camera} 
                         onFileSelect={(file) => handleFileUpload(file, 'photo')}
                         isUploaded={!!formData.imageUrls.photo}
@@ -1735,7 +1766,8 @@ export default function App() {
                         previewUrl={previews['photo']}
                       />
                       <UploadBox 
-                        label="সিভি/রেজুমে" 
+                        labelBn="সিভি/রেজুমে"
+                        labelEn="CV / Resume"
                         icon={FileText} 
                         onFileSelect={(file) => handleFileUpload(file, 'cv')}
                         isUploaded={!!formData.imageUrls.cv}
@@ -1743,7 +1775,8 @@ export default function App() {
                         previewUrl={previews['cv']}
                       />
                       <UploadBox 
-                        label="জাতীয় পরিচয়পত্র" 
+                        labelBn="পরিচয়পত্র"
+                        labelEn="NID / ID Card"
                         icon={ShieldCheck} 
                         onFileSelect={(file) => handleFileUpload(file, 'nid')}
                         isUploaded={!!formData.imageUrls.nid}
@@ -1752,13 +1785,13 @@ export default function App() {
                       />
                     </div>
 
-                    <Field label="সোশ্যাল প্রোফাইল (ফেসবুক/লিঙ্কডইন)">
+                    <Field labelBn="সোশ্যাল প্রোফাইল" labelEn="Social Profile (FB/LinkedIn)">
                       <input 
                         type="url" 
-                        placeholder="https://facebook.com/..."
+                        placeholder="https://linkedin.com/in/..."
                         value={formData.facebookLink}
                         onChange={e => updateField('facebookLink', e.target.value)}
-                        className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:bg-white focus:border-brand-blue transition-all"
+                        className="w-full px-6 py-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:bg-white focus:border-brand-blue transition-all font-bold text-brand-deep placeholder:text-slate-300"
                       />
                     </Field>
 
@@ -1771,8 +1804,8 @@ export default function App() {
                       >
                         {formData.agree && <CheckCircle2 className="w-4 h-4" />}
                       </div>
-                      <span className="text-xs text-slate-500 font-medium leading-relaxed">
-                        আমি নিশ্চিত করছি যে প্রকাশিত সকল তথ্য সঠিক এবং আমি ShopVerse-এর গোপনীয়তা নীতির সাথে একমত।
+                      <span className="text-xs text-slate-500 font-bold leading-relaxed">
+                        আমি নিশ্চিত করছি যে তথ্যাদি সঠিক এবং আমি ShopVerse শর্তাবলীর সাথে একমত। (I confirm the data is accurate and agree to terms).
                       </span>
                     </label>
                   </motion.div>
@@ -1833,17 +1866,47 @@ export default function App() {
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-blue/30 transition-all">
+              <div 
+                onClick={() => handleCopy(submissionResult?.displayId || '', 'id')}
+                className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-blue/30 transition-all cursor-pointer relative overflow-hidden"
+              >
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {copiedField === 'id' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                </div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">আবেদন আইডি (Application ID)</span>
                 <span className="font-mono font-bold text-brand-blue text-2xl tracking-tighter">
                   {submissionResult?.displayId || 'SV-XXX-XXX'}
                 </span>
+                {copiedField === 'id' && (
+                  <motion.span 
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
+                  >
+                    কপি করা হয়েছে (Copied)
+                  </motion.span>
+                )}
               </div>
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-glow/30 transition-all">
+              <div 
+                onClick={() => handleCopy(submissionResult?.password || '', 'pass')}
+                className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center group hover:border-brand-glow/30 transition-all cursor-pointer relative overflow-hidden"
+              >
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {copiedField === 'pass' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                </div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">সিকিউরিটি পাসওয়ার্ড (Password)</span>
                 <span className="font-mono font-bold text-brand-glow text-2xl tracking-[0.2em] bg-brand-deep px-6 py-2 rounded-xl">
                   {submissionResult?.password || 'XXXXXX'}
                 </span>
+                {copiedField === 'pass' && (
+                  <motion.span 
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="text-[10px] font-bold text-emerald-500 mt-2 uppercase"
+                  >
+                    কপি করা হয়েছে (Copied)
+                  </motion.span>
+                )}
               </div>
             </div>
 
