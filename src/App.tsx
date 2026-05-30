@@ -61,6 +61,7 @@ import {
   TermsConditions, 
   SupportPortal 
 } from './components/InfoViews';
+import { StatusView } from './components/StatusView';
 
 // --- Constants ---
 
@@ -169,6 +170,41 @@ const UploadBox = ({ labelBn, labelEn, icon: Icon, onFileSelect, isUploaded, pro
         </div>
       ) : null}
 
+      {progress > 0 && progress < 100 && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+          <div className="relative w-20 h-20 mb-4">
+             <svg className="w-full h-full -rotate-90">
+               <circle
+                 cx="40"
+                 cy="40"
+                 r="36"
+                 stroke="currentColor"
+                 strokeWidth="4"
+                 fill="transparent"
+                 className="text-slate-100"
+               />
+               <motion.circle
+                 cx="40"
+                 cy="40"
+                 r="36"
+                 stroke="currentColor"
+                 strokeWidth="4"
+                 fill="transparent"
+                 strokeDasharray="226.2"
+                 initial={{ strokeDashoffset: 226.2 }}
+                 animate={{ strokeDashoffset: 226.2 - (226.2 * progress) / 100 }}
+                 className="text-brand-blue"
+                 strokeLinecap="round"
+               />
+             </svg>
+             <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-black text-brand-deep font-mono">{Math.round(progress)}%</span>
+             </div>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue animate-pulse">ফাইল আপলোড হচ্ছে...</p>
+        </div>
+      )}
+
       <div className="relative z-10 flex flex-col items-center text-center px-4">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
           isUploaded ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 shadow-sm group-hover:scale-110 group-hover:text-brand-blue'
@@ -180,16 +216,6 @@ const UploadBox = ({ labelBn, labelEn, icon: Icon, onFileSelect, isUploaded, pro
           <p className={`text-xs font-bold ${isUploaded ? 'text-emerald-600' : 'text-slate-400'}`}>{isUploaded ? 'আপলোড হয়েছে' : labelBn}</p>
         </div>
       </div>
-
-      {progress > 0 && progress < 100 && (
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-slate-200 overflow-hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className="h-full bg-brand-blue" 
-          />
-        </div>
-      )}
 
       <AnimatePresence>
         {isHovered && !isUploaded && (
@@ -537,81 +563,7 @@ export default function App() {
   }
 
   if (view === 'status' && currentApp) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl w-full"
-        >
-          <button 
-            onClick={() => setView('home')}
-            className="flex items-center gap-2 text-slate-500 hover:text-brand-blue font-bold text-sm mb-6 transition-all group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> হোমে ফিরে যান
-          </button>
-
-          <div className="bg-white rounded-[40px] shadow-premium overflow-hidden border border-white">
-            <div className="p-10 lg:p-12 text-center bg-linear-to-b from-slate-50 to-white">
-              <div className={`w-20 h-20 rounded-3xl mx-auto mb-6 flex items-center justify-center text-white shadow-xl ${
-                currentApp.status === 'hired' ? 'bg-emerald-500' : 
-                currentApp.status === 'interview' ? 'bg-brand-blue' : 
-                currentApp.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
-              }`}>
-                {currentApp.status === 'pending' && <Clock className="w-10 h-10" />}
-                {currentApp.status === 'interview' && <Users className="w-10 h-10" />}
-                {currentApp.status === 'hired' && <CheckCircle2 className="w-10 h-10" />}
-                {currentApp.status === 'rejected' && <X className="w-10 h-10" />}
-              </div>
-              
-              <h2 className="font-display text-3xl font-black text-brand-deep mb-2 tracking-tight">আপনার আবেদনের বর্তমান অবস্থা</h2>
-              <div className="flex items-center justify-center gap-2 mb-8">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">আইডি:</span>
-                <span className="text-xs font-mono font-bold text-brand-blue bg-brand-blue/5 px-3 py-1 rounded-full">{currentApp.displayId}</span>
-              </div>
-
-              <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 font-bold mb-10 transition-all ${
-                currentApp.status === 'hired' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 
-                currentApp.status === 'interview' ? 'border-brand-blue bg-brand-blue/5 text-brand-blue' : 
-                currentApp.status === 'rejected' ? 'border-red-500 bg-red-50 text-red-600' : 'border-amber-500 bg-amber-50 text-amber-600'
-              }`}>
-                <span className={`w-3 h-3 rounded-full animate-pulse ${
-                  currentApp.status === 'hired' ? 'bg-emerald-500' : 
-                  currentApp.status === 'interview' ? 'bg-brand-blue' : 
-                  currentApp.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
-                }`} />
-                <span className="uppercase tracking-widest">{currentApp.status}</span>
-              </div>
-
-              <div className="text-left p-8 rounded-3xl bg-slate-50 border border-slate-100 mb-8">
-                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">অফিশিয়াল নোট (Official Note)</h4>
-                 <p className="text-slate-600 font-medium leading-relaxed italic">
-                   "{currentApp.adminNote || 'আপনার আবেদনটি বর্তমানে পর্যালোচনাধীন আছে। অনুগ্রহ করে পরবর্তী আপডেটের জন্য অপেক্ষা করুন।'}"
-                 </p>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-brand-blue/5 border border-brand-blue/10 flex gap-4 text-left">
-                <div className="w-10 h-10 rounded-xl bg-white border border-brand-blue/10 flex items-center justify-center flex-shrink-0 text-brand-blue">
-                   <MessageCircle className="w-5 h-5" />
-                </div>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  আপনার যদি কোনো প্রশ্ন থাকে, তবে আমাদের ফেইসবুক পেজে যোগাযোগ করতে পারেন। (For queries, contact our FB page).
-                </p>
-              </div>
-            </div>
-            
-            <div className="bg-slate-50 p-8 flex flex-col sm:flex-row gap-4">
-              <button 
-                onClick={() => setView('home')}
-                className="flex-1 bg-brand-deep text-white px-8 py-4 rounded-xl font-bold transition-all hover:bg-slate-800 shadow-lg"
-              >
-                আবেদন ট্র্যাকিং থেকে বের হন
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <StatusView currentApp={currentApp} onBack={() => setView('home')} />;
   }
 
   return (
